@@ -1,0 +1,101 @@
+/* Cognitive Form Assist — injected UI */
+
+.cfa-root {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 8px;
+  position: relative;
+  z-index: 2147483640;
+}
+
+.cfa-help-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.cfa-help-btn:hover,
+.cfa-help-btn:focus-visible {
+  background: #dbeafe;
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+.cfa-panel {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  min-width: 260px;
+  max-width: min(420px, 92vw);
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15);
+  font-size: 14px;
+  line-height: 1.45;
+  color: #0f172a;
+}
+
+.cfa-panel[hidden] {
+  display: none !important;
+}
+
+.cfa-original {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.cfa-simple {
+  margin: 0 0 8px;
+  font-weight: 500;
+}
+
+.cfa-simple:focus {
+  outline: none;
+}
+
+.cfa-meta {
+  margin: 0 0 10px;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.cfa-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cfa-speak-btn,
+.cfa-close-btn {
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  cursor: pointer;
+}
+
+.cfa-speak-btn {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+
+.cfa-speak-btn:hover {
+  background: #1d4ed8;
+}
+
+.cfa-close-btn:hover {
+  background: #e2e8f0;
+}
