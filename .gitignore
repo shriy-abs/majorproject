@@ -1,0 +1,16 @@
+# Virtual environments
+myenv/
+venv/
+env/
+backend/myenv/
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# VS Code / Cursor settings
+.vscode/
+
+# OS junk
+.DS_Store
+Thumbs.db
