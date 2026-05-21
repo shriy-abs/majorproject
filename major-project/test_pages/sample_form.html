@@ -3,118 +3,600 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sample Form</title>
+  <title>National Digital Services — Scheme Application (Demo)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet" />
   <style>
+    :root {
+      --navy: #0f2744;
+      --navy-light: #1a3a5c;
+      --saffron: #e85d04;
+      --green: #2d6a4f;
+      --bg: #eef2f7;
+      --card: #ffffff;
+      --border: #d0dae8;
+      --text: #1e293b;
+      --muted: #64748b;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --radius: 12px;
+      --shadow: 0 4px 24px rgba(15, 39, 68, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      padding: 40px;
+      margin: 0;
+      font-family: "DM Sans", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
     }
 
-    .form-container {
-      background: white;
-      padding: 30px;
-      border-radius: 12px;
-      max-width: 700px;
-      margin: auto;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    .page-header {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 55%, #234876 100%);
+      color: #fff;
+      padding: 0;
     }
 
-    h2 {
-      text-align: center;
-      margin-bottom: 25px;
+    .header-inner {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 28px 24px 32px;
     }
 
-    .form-group {
+    .gov-strip {
+      display: flex;
+      align-items: center;
+      gap: 14px;
       margin-bottom: 20px;
     }
 
-    label {
-      display: block;
-      font-weight: bold;
-      margin-bottom: 8px;
+    .emblem {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #fff 0%, #e2e8f0 100%);
+      display: grid;
+      place-items: center;
+      font-size: 26px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
     }
 
-    input, textarea, select {
+    .portal-name {
+      font-family: "Source Serif 4", Georgia, serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0;
+    }
+
+    .portal-tagline {
+      margin: 4px 0 0;
+      font-size: 0.85rem;
+      opacity: 0.85;
+    }
+
+    .demo-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      backdrop-filter: blur(8px);
+    }
+
+    .demo-banner-icon {
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+
+    .demo-banner h2 {
+      margin: 0 0 6px;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .demo-banner p {
+      margin: 0;
+      font-size: 0.88rem;
+      opacity: 0.92;
+      line-height: 1.45;
+    }
+
+    .demo-tips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .demo-tip {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    main {
+      max-width: 920px;
+      margin: -20px auto 48px;
+      padding: 0 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .form-card {
+      background: var(--card);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .form-meta {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 28px;
+      background: var(--accent-soft);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .form-meta h1 {
+      margin: 0;
+      font-family: "Source Serif 4", Georgia, serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    .form-ref {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .form-ref strong {
+      color: var(--text);
+    }
+
+    form {
+      padding: 8px 28px 32px;
+    }
+
+    .form-section {
+      padding: 24px 0;
+      border-bottom: 1px solid #e8edf4;
+    }
+
+    .form-section:last-of-type {
+      border-bottom: none;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .section-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--navy);
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 700;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+
+    .section-title {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    .section-desc {
+      margin: 2px 0 0;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .field-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .field-grid--2 {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    @media (max-width: 640px) {
+      .field-grid--2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .field label .required {
+      color: var(--saffron);
+      margin-left: 2px;
+    }
+
+    .field-hint {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .field input,
+    .field textarea,
+    .field select {
       width: 100%;
+      padding: 11px 14px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fafbfc;
+      color: var(--text);
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: #fff;
+    }
+
+    .field textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    .field input[type="file"] {
       padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 14px;
+      font-size: 0.85rem;
     }
 
-    button {
-      background: #2563eb;
-      color: white;
-      border: none;
-      padding: 12px 20px;
-      border-radius: 8px;
+    .checkbox-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 16px;
+      background: #f8fafc;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .checkbox-row input {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      accent-color: var(--navy);
+    }
+
+    .checkbox-row label {
+      font-size: 0.88rem;
+      font-weight: 500;
       cursor: pointer;
-      font-size: 15px;
     }
 
-    button:hover {
-      background: #1d4ed8;
+    .form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 24px;
+      margin-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+      color: #fff;
+      border: none;
+      padding: 14px 32px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 4px 14px rgba(15, 39, 68, 0.25);
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.08);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 12px 20px;
+      font-size: 0.9rem;
+      border-radius: 10px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .save-note {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .footer-note {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 24px;
+      padding: 0 20px;
     }
   </style>
 </head>
 <body>
-  <div class="form-container">
-    <h2>Government Registration Form</h2>
+  <header class="page-header">
+    <div class="header-inner">
+      <div class="gov-strip">
+        <div class="emblem" aria-hidden="true">🇮🇳</div>
+        <div>
+          <p class="portal-name">National Digital Services Portal</p>
+          <p class="portal-tagline">Ministry of Citizen Services · Demo Environment</p>
+        </div>
+      </div>
+      <div class="demo-banner" role="note">
+        <span class="demo-banner-icon" aria-hidden="true">✦</span>
+        <div>
+          <h2>Cognitive Form Assist — Live Demo Page</h2>
+          <p>
+            Load the Chrome extension, then interact with this form. Click the <strong>?</strong> beside any field for
+            plain-language help, fix email typos, hear voice guidance, and use <strong>Summarize page</strong> (bottom-right).
+          </p>
+          <div class="demo-tips">
+            <span class="demo-tip">Try: user@gmial.com → fix typo</span>
+            <span class="demo-tip">Focus fields for voice + highlights</span>
+            <span class="demo-tip">Open extension popup for analytics</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
 
-    <form>
-      <div class="form-group">
-        <label for="fullname">Full Name</label>
-        <input type="text" id="fullname" placeholder="Enter your full name" />
+  <main>
+    <div class="form-card">
+      <div class="form-meta">
+        <h1>Unified Welfare Scheme — New Application</h1>
+        <p class="form-ref">Reference: <strong>NDS-2026-DEMO</strong> · Session ID: DEMO-8842</p>
       </div>
 
-      <div class="form-group">
-        <label for="dob">Date of Birth</label>
-        <input type="date" id="dob" />
-      </div>
+      <form id="welfare-application" action="#" method="post" novalidate>
+        <!-- Section 1 -->
+        <section class="form-section" aria-labelledby="sec-personal">
+          <div class="section-head">
+            <span class="section-num">1</span>
+            <div>
+              <h2 class="section-title" id="sec-personal">Personal particulars of applicant</h2>
+              <p class="section-desc">As recorded on your Aadhaar or government-issued identity document</p>
+            </div>
+          </div>
+          <div class="field-grid field-grid--2">
+            <div class="field">
+              <label for="applicant-name">Full Name of Applicant (as per official records) <span class="required">*</span></label>
+              <input type="text" id="applicant-name" name="applicant_name" placeholder="Enter name exactly as on Aadhaar" autocomplete="name" />
+            </div>
+            <div class="field">
+              <label for="father-name">Father's / Guardian's Full Name <span class="required">*</span></label>
+              <input type="text" id="father-name" name="father_name" placeholder="Enter father's or guardian's legal name" />
+            </div>
+            <div class="field">
+              <label for="dob">Date of Birth <span class="required">*</span></label>
+              <input type="date" id="dob" name="dob" aria-describedby="dob-hint" />
+              <p id="dob-hint" class="field-hint">Must match your identity document (DD/MM/YYYY).</p>
+            </div>
+            <div class="field">
+              <label for="gender">Gender (as per identity document)</label>
+              <select id="gender" name="gender">
+                <option value="">— Select —</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other / Prefer not to say</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="application-category">Application Category / Beneficiary Type <span class="required">*</span></label>
+              <select id="application-category" name="category">
+                <option value="">Select applicable category</option>
+                <option value="student">Student (18–25 years)</option>
+                <option value="senior">Senior Citizen (60+ years)</option>
+                <option value="bpl">Below Poverty Line (BPL) Household</option>
+                <option value="disability">Person with Disability (PwD)</option>
+                <option value="farmer">Small / Marginal Farmer</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="annual-income">Annual Household Income (in INR, pre-tax) <span class="required">*</span></label>
+              <input type="number" id="annual-income" name="annual_income" placeholder="e.g. 450000" min="0" step="1000" />
+            </div>
+          </div>
+        </section>
 
-      <div class="form-group">
-        <label for="address">Permanent Address</label>
-        <textarea id="address" placeholder="Enter your full address"></textarea>
-      </div>
+        <!-- Section 2 -->
+        <section class="form-section" aria-labelledby="sec-address">
+          <div class="section-head">
+            <span class="section-num">2</span>
+            <div>
+              <h2 class="section-title" id="sec-address">Residential & correspondence address</h2>
+              <p class="section-desc">Permanent address must match supporting address proof</p>
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="permanent-address">Applicant's Permanent Residential Address (complete, with PIN) <span class="required">*</span></label>
+              <textarea id="permanent-address" name="permanent_address" placeholder="House/Flat no., Street, Locality, City, State, PIN Code" rows="3"></textarea>
+            </div>
+            <div class="field-grid field-grid--2">
+              <div class="field">
+                <label for="pin-code">PIN Code (Postal Index Number) <span class="required">*</span></label>
+                <input type="text" id="pin-code" name="pin_code" placeholder="6-digit PIN" maxlength="6" inputmode="numeric" />
+              </div>
+              <div class="field">
+                <label for="city">Current City / Town of Residence</label>
+                <input type="text" id="city" name="city" placeholder="City where you currently live" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="correspondence-address">Correspondence Address (if different from permanent address)</label>
+              <textarea id="correspondence-address" name="correspondence_address" placeholder="Leave blank if same as permanent address" rows="2"></textarea>
+            </div>
+          </div>
+        </section>
 
-      <div class="form-group">
-        <label for="income">Annual Household Income</label>
-        <input type="number" id="income" placeholder="Enter yearly family income" />
-      </div>
+        <!-- Section 3 -->
+        <section class="form-section" aria-labelledby="sec-identity">
+          <div class="section-head">
+            <span class="section-num">3</span>
+            <div>
+              <h2 class="section-title" id="sec-identity">Identity & statutory identifiers</h2>
+              <p class="section-desc">Enter numbers without spaces or special characters unless specified</p>
+            </div>
+          </div>
+          <div class="field-grid field-grid--2">
+            <div class="field">
+              <label for="aadhaar">Aadhaar Number (12 digits) <span class="required">*</span></label>
+              <input type="text" id="aadhaar" name="aadhaar" placeholder="1234 5678 9012" inputmode="numeric" maxlength="14" />
+            </div>
+            <div class="field">
+              <label for="pan">Permanent Account Number (PAN) <span class="required">*</span></label>
+              <input type="text" id="pan" name="pan" placeholder="ABCDE1234F" maxlength="10" autocapitalize="characters" />
+            </div>
+          </div>
+        </section>
 
-      <div class="form-group">
-        <label for="aadhaar">Aadhaar Number</label>
-        <input type="text" id="aadhaar" placeholder="Enter 12-digit Aadhaar number" />
-      </div>
+        <!-- Section 4 -->
+        <section class="form-section" aria-labelledby="sec-contact">
+          <div class="section-head">
+            <span class="section-num">4</span>
+            <div>
+              <h2 class="section-title" id="sec-contact">Contact details & portal credentials</h2>
+              <p class="section-desc">Used for OTP, status updates, and portal login</p>
+            </div>
+          </div>
+          <div class="field-grid field-grid--2">
+            <div class="field">
+              <label for="email">Registered Email Address for Communication <span class="required">*</span></label>
+              <input type="email" id="email" name="email" placeholder="name@example.com" autocomplete="email" />
+              <p class="field-hint">Demo: try <code>you@gmial.com</code> then correct to gmail.com</p>
+            </div>
+            <div class="field">
+              <label for="mobile">Mobile / Contact Number (10 digits, India) <span class="required">*</span></label>
+              <input type="tel" id="mobile" name="mobile" placeholder="+91 98765 43210" autocomplete="tel" />
+            </div>
+            <div class="field">
+              <label for="portal-password">Create Portal Password (min. 8 characters) <span class="required">*</span></label>
+              <input type="password" id="portal-password" name="portal_password" placeholder="Letters and numbers required" autocomplete="new-password" />
+            </div>
+            <div class="field">
+              <label for="confirm-password">Confirm Portal Password</label>
+              <input type="password" id="confirm-password" name="confirm_password" placeholder="Re-enter password" autocomplete="new-password" />
+            </div>
+          </div>
+        </section>
 
-      <div class="form-group">
-        <label for="email">Email Address</label>
-        <input type="email" id="email" placeholder="Enter your email" />
-      </div>
+        <!-- Section 5 -->
+        <section class="form-section" aria-labelledby="sec-docs">
+          <div class="section-head">
+            <span class="section-num">5</span>
+            <div>
+              <h2 class="section-title" id="sec-docs">Supporting documents</h2>
+              <p class="section-desc">PDF or JPEG, max 2 MB per file</p>
+            </div>
+          </div>
+          <div class="field-grid field-grid--2">
+            <div class="field">
+              <label for="id-proof">Upload Government ID Proof (Aadhaar / Voter ID / Passport) <span class="required">*</span></label>
+              <input type="file" id="id-proof" name="id_proof" accept=".pdf,.jpg,.jpeg,.png" />
+            </div>
+            <div class="field">
+              <label for="address-proof">Upload Address Proof (utility bill / rent agreement)</label>
+              <input type="file" id="address-proof" name="address_proof" accept=".pdf,.jpg,.jpeg,.png" />
+            </div>
+          </div>
+          <div class="field" style="margin-top: 18px;">
+            <label for="remarks">Additional Remarks / Special Circumstances (optional)</label>
+            <textarea id="remarks" name="remarks" placeholder="Any information the processing officer should know" rows="2"></textarea>
+          </div>
+        </section>
 
-      <div class="form-group">
-        <label for="phone">Phone Number</label>
-        <input type="tel" id="phone" placeholder="Enter your mobile number" />
-      </div>
+        <!-- Section 6 -->
+        <section class="form-section" aria-labelledby="sec-declaration">
+          <div class="section-head">
+            <span class="section-num">6</span>
+            <div>
+              <h2 class="section-title" id="sec-declaration">Declaration</h2>
+            </div>
+          </div>
+          <div class="checkbox-row">
+            <input type="checkbox" id="declare-truth" name="declare_truth" required />
+            <label for="declare-truth">
+              I hereby declare that the particulars furnished above are true and correct to the best of my knowledge.
+              I understand that false information may lead to rejection or penal action under applicable law.
+            </label>
+          </div>
+          <div class="checkbox-row" style="margin-top: 12px;">
+            <input type="checkbox" id="declare-consent" name="declare_consent" required />
+            <label for="declare-consent">
+              I consent to verification of my details through UIDAI / income databases and agree to receive SMS/email updates.
+            </label>
+          </div>
+        </section>
 
-      <div class="form-group">
-        <label for="idproof">Upload ID Proof</label>
-        <input type="file" id="idproof" />
-      </div>
+        <div class="form-actions">
+          <p class="save-note">Fields marked <span class="required">*</span> are mandatory · Use extension ? for help</p>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <button type="button" class="btn-secondary">Save as Draft</button>
+            <button type="submit" class="btn-primary">Submit Application</button>
+          </div>
+        </div>
+      </form>
+    </div>
 
-      <div class="form-group">
-        <label for="category">Application Category</label>
-        <select id="category">
-          <option value="">Select category</option>
-          <option>Student</option>
-          <option>Employee</option>
-          <option>Senior Citizen</option>
-        </select>
-      </div>
+    <p class="footer-note">
+      Demo page for Cognitive Form Assist major project · Not an official government website
+    </p>
+  </main>
 
-      <button type="submit">Submit</button>
-    </form>
-  </div>
+  <script>
+    document.getElementById("welfare-application").addEventListener("submit", function (e) {
+      e.preventDefault();
+      alert("Demo form — submission disabled. Your extension features were exercised successfully!");
+    });
+  </script>
 </body>
 </html>

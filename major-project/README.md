@@ -369,15 +369,16 @@ major-project/
 
 # 16. Running the project (end-to-end)
 
+All commands below assume you are in the **`major-project/`** directory (this folder).
+
 ## 1. Backend (Python)
 
 ```bash
 cd backend
-python -m venv .venv
-# Windows:
-.venv\Scripts\activate
+python3 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-python app.py
+python3 app.py
 ```
 
 Leave this running. Default URL: `http://127.0.0.1:5000`  

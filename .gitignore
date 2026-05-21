@@ -1,8 +1,10 @@
 # Virtual environments
 myenv/
 venv/
+.venv/
 env/
-backend/myenv/
+major-project/backend/myenv/
+major-project/backend/.venv/
 
 # Python cache files
 __pycache__/
