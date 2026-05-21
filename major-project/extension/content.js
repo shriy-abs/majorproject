@@ -30,18 +30,6 @@
   let focusedFieldEl = null;
   let typoFlashTimer = null;
 
-  const HI_VOICE = {
-    "Did you mean": "क्या आपका मतलब है",
-    "Email should include an @ symbol": "ईमेल में @ चिह्न होना चाहिए, उदाहरण: name@gmail.com।",
-    "Email should include a dot after the @": "ईमेल में @ के बाद बिंदु होना चाहिए, उदाहरण: name@gmail.com।",
-    "This does not look like a complete email": "यह पूरा ईमेल नहीं लगता। वर्तनी जाँचें।",
-    "Phone numbers should use digits only": "फ़ोन नंबर में केवल अंक होने चाहिए। अक्षर हटाएँ।",
-    "Enter at least 10 digits": "कम से कम 10 अंक दर्ज करें।",
-    "Use a stronger password": "मज़बूत पासवर्ड बनाएँ",
-    "Enter the value this field is asking for": "इस फ़ील्ड में जो माँगा गया है वह भरें।",
-    "This field is asking for": "यह फ़ील्ड पूछ रहा है",
-  };
-
   chrome.storage.local.get({ voiceLanguage: "EN" }, (items) => {
     voiceLanguage = items.voiceLanguage === "HI" ? "HI" : "EN";
   });
@@ -314,7 +302,10 @@
       const r = await fetch(`${base}/api/simplify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({
+          text,
+          lang: voiceLanguage === "HI" ? "hi" : "en",
+        }),
       });
       const data = await r.json();
       const ms = performance.now() - t0;
@@ -330,15 +321,19 @@
 
   function translateForVoice(text) {
     if (voiceLanguage !== "HI" || !text) return text;
-    let out = text;
-    Object.keys(HI_VOICE).forEach((en) => {
-      if (out.includes(en)) out = out.replace(en, HI_VOICE[en]);
-    });
-    if (/Did you mean (\S+)\?/.test(text)) {
-      const m = text.match(/Did you mean (\S+)\?/);
-      if (m) out = `क्या आपका मतलब ${m[1]} है?`;
-    }
-    return out;
+    if (window.CFAVoiceHI) return window.CFAVoiceHI.translate(text);
+    return text;
+  }
+
+  function pickVoiceForLang(langCode) {
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices.length) return null;
+    const want = langCode.startsWith("hi") ? "hi" : "en";
+    return (
+      voices.find((v) => v.lang && v.lang.toLowerCase().startsWith(want) && /hindi|hi-|india/i.test(v.name + v.lang)) ||
+      voices.find((v) => v.lang && v.lang.toLowerCase().startsWith(want)) ||
+      null
+    );
   }
 
   function speakMultilingual(text) {
@@ -346,13 +341,22 @@
     if (!line) return;
     try {
       window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(translateForVoice(line));
-      u.lang = voiceLanguage === "HI" ? "hi-IN" : "en-US";
+      const spoken = translateForVoice(line);
+      const u = new SpeechSynthesisUtterance(spoken);
+      const langCode = voiceLanguage === "HI" ? "hi-IN" : "en-US";
+      u.lang = langCode;
       u.rate = 0.92;
+      const voice = pickVoiceForLang(langCode);
+      if (voice) u.voice = voice;
       window.speechSynthesis.speak(u);
     } catch (_) {
       /* no TTS */
     }
+  }
+
+  if (window.speechSynthesis) {
+    window.speechSynthesis.onvoiceschanged = () => {};
+    window.speechSynthesis.getVoices();
   }
 
   function ensureMicroTooltip() {
@@ -419,12 +423,17 @@
     }
   }
 
-  function pickFocusVoiceMessage(api, result, contextText) {
+  function pickFocusVoiceMessage(api, result, contextText, fieldEl) {
     if (result.typo) return result.typo;
     if (result.messages && result.messages.length) return result.messages[0];
     if (api) {
       const custom = api.getSpeakText();
       if (custom && custom !== "Loading…") return custom.replace(/^•\s*/gm, "").split("\n")[0];
+    }
+    if (voiceLanguage === "HI" && fieldEl && window.CFAVoiceHI) {
+      const kind = detectFieldKind(fieldEl, contextText);
+      const hint = window.CFAVoiceHI.fieldKindHint(kind);
+      if (hint) return hint;
     }
     if (contextText) return contextText.split(".")[0];
     return "";
@@ -621,7 +630,7 @@
     const result = api ? api.refreshValidation() : runFieldValidation(el, ctx);
     applyVisualState(el, result);
 
-    const speakLine = pickFocusVoiceMessage(api, result, ctx);
+    const speakLine = pickFocusVoiceMessage(api, result, ctx, el);
     if (speakLine) {
       speakMultilingual(speakLine);
       if (window.CFAMetrics) window.CFAMetrics.bump("voiceAssistsTriggered");

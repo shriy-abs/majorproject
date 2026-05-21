@@ -19,7 +19,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["metrics.js", "content.js"],
+      "js": ["metrics.js", "voice-hi.js", "content.js"],
       "css": ["style.css"],
       "run_at": "document_idle"
     }

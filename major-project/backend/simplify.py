@@ -165,21 +165,34 @@ def simplify_rules(text: str) -> str:
     return f'Enter what the label describes: “{snippet}”.'
 
 
-def simplify_openai(text: str) -> Optional[str]:
+def simplify_openai(text: str, lang: str = "en") -> Optional[str]:
     """Optional LLM simplification. Returns None on failure."""
     key = os.environ.get("OPENAI_API_KEY", "").strip()
     if not key:
         return None
 
-    prompt = (
-        "Explain this form field in very simple, plain English.\n"
-        "Format (strict):\n"
-        "- First line(s): one or two short sentences saying what the user should type or choose.\n"
-        "- Optional second part: only if a tiny example really helps, add exactly one line starting with "
-        '"Example: " followed by a brief sample (no extra lines).\n'
-        "Rules: do not invent new requirements; do not ask questions; no bullets, headings, or preamble.\n\n"
-        f"Field label or instruction:\n{text}"
-    )
+    if lang == "hi":
+        prompt = (
+            "इस फॉर्म फ़ील्ड को बहुत सरल हिंदी में समझाएँ।\n"
+            "प्रारूप: एक या दो छोटे वाक्य जो उपयोगकर्ता को क्या भरना है बताएँ।\n"
+            "ज़रूरत हो तो 'उदाहरण: ' से एक छोटा उदाहरण दें। कोई सवाल न पूछें।\n\n"
+            f"फ़ील्ड लेबल:\n{text}"
+        )
+        system = "आप सरकारी वेब फॉर्म को सरल हिंदी में समझाते हैं। जवाब केवल हिंदी में दें।"
+    else:
+        prompt = (
+            "Explain this form field in very simple, plain English.\n"
+            "Format (strict):\n"
+            "- First line(s): one or two short sentences saying what the user should type or choose.\n"
+            "- Optional second part: only if a tiny example really helps, add exactly one line starting with "
+            '"Example: " followed by a brief sample (no extra lines).\n'
+            "Rules: do not invent new requirements; do not ask questions; no bullets, headings, or preamble.\n\n"
+            f"Field label or instruction:\n{text}"
+        )
+        system = (
+            "You explain government and web forms in plain language. "
+            "Keep answers short and friendly."
+        )
 
     try:
         r = requests.post(
@@ -191,13 +204,7 @@ def simplify_openai(text: str) -> Optional[str]:
             json={
                 "model": os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
                 "messages": [
-                    {
-                        "role": "system",
-                        "content": (
-                            "You explain government and web forms in plain language. "
-                            "Keep answers short and friendly."
-                        ),
-                    },
+                    {"role": "system", "content": system},
                     {"role": "user", "content": prompt},
                 ],
                 "max_tokens": 150,
@@ -213,19 +220,29 @@ def simplify_openai(text: str) -> Optional[str]:
         return None
 
 
-def simplify_text(text: str) -> Tuple[str, str]:
+def simplify_text(text: str, lang: str = "en") -> Tuple[str, str]:
     """
     Returns (simplified_text, source) where source is 'llm', 'rules', or 'fallback'.
+    lang: 'en' or 'hi'
     """
     cleaned = _clean(text)
-    if not cleaned:
-        return (
-            "No label was found; ask the site owner for help or skip if optional.",
-            "rules",
-        )
+    use_hi = lang.lower().startswith("hi")
 
-    llm = simplify_openai(cleaned)
+    if not cleaned:
+        empty = (
+            "कोई लेबल नहीं मिला। मदद के लिए साइट से पूछें या खाली छोड़ें।"
+            if use_hi
+            else "No label was found; ask the site owner for help or skip if optional."
+        )
+        return empty, "rules"
+
+    llm = simplify_openai(cleaned, lang="hi" if use_hi else "en")
     if llm:
         return llm, "llm"
+
+    if use_hi:
+        from simplify_hi import simplify_rules_hi
+
+        return simplify_rules_hi(cleaned), "rules"
 
     return simplify_rules(cleaned), "rules"

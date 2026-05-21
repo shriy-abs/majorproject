@@ -39,8 +39,9 @@ def simplify():
     if not text:
         return jsonify({"ok": False, "error": "missing or empty 'text'"}), 400
 
-    simplified, source = simplify_text(text)
-    return jsonify({"ok": True, "simplified": simplified, "source": source})
+    lang = (data.get("lang") or "en").strip().lower()
+    simplified, source = simplify_text(text, lang=lang)
+    return jsonify({"ok": True, "simplified": simplified, "source": source, "lang": lang})
 
 
 if __name__ == "__main__":
