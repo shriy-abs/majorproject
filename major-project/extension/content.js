@@ -34,10 +34,51 @@
 
   const VALID_LANGS = new Set(["EN", "HI", "KN"]);
 
-  function backendPost(path, body) {
+  function normalizeBackendBase(url) {
+    const raw = (url || DEFAULT_BACKEND).trim();
+    try {
+      const u = new URL(raw);
+      return `${u.protocol}//${u.host}`;
+    } catch (_) {
+      return DEFAULT_BACKEND;
+    }
+  }
+
+  async function getBackendBase() {
+    return new Promise((resolve) => {
+      try {
+        chrome.storage.local.get({ backendUrl: DEFAULT_BACKEND }, (items) => {
+          resolve(normalizeBackendBase(items.backendUrl || DEFAULT_BACKEND));
+        });
+      } catch (_) {
+        resolve(DEFAULT_BACKEND);
+      }
+    });
+  }
+
+  async function backendPostDirect(path, body) {
+    const base = await getBackendBase();
+    try {
+      const r = await fetch(`${base}${path}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.ok && data && data.ok) return { ok: true, data };
+      return {
+        ok: false,
+        error: (data && data.error) || `HTTP ${r.status} from ${base}${path}`,
+      };
+    } catch (e) {
+      return { ok: false, error: `Cannot reach ${base}: ${e.message || e}` };
+    }
+  }
+
+  function backendPostViaWorker(path, body) {
     return new Promise((resolve) => {
       if (!chrome.runtime?.sendMessage) {
-        resolve({ ok: false, error: "no runtime" });
+        resolve({ ok: false, error: "extension runtime unavailable" });
         return;
       }
       chrome.runtime.sendMessage({ type: "cfaApi", path, body }, (response) => {
@@ -45,9 +86,20 @@
           resolve({ ok: false, error: chrome.runtime.lastError.message });
           return;
         }
-        resolve(response || { ok: false, error: "empty response" });
+        resolve(response || { ok: false, error: "empty response from service worker" });
       });
     });
+  }
+
+  async function backendPost(path, body) {
+    const viaWorker = await backendPostViaWorker(path, body);
+    if (viaWorker.ok && viaWorker.data) return viaWorker;
+    const viaDirect = await backendPostDirect(path, body);
+    if (viaDirect.ok) return viaDirect;
+    return {
+      ok: false,
+      error: viaDirect.error || viaWorker.error || "backend unreachable",
+    };
   }
 
   function normalizeLang(value) {
@@ -85,18 +137,6 @@
       }
     }
   });
-
-  function getBackendBase() {
-    return new Promise((resolve) => {
-      try {
-        chrome.storage.local.get({ backendUrl: DEFAULT_BACKEND }, (items) => {
-          resolve((items.backendUrl || DEFAULT_BACKEND).replace(/\/+$/, ""));
-        });
-      } catch (_) {
-        resolve(DEFAULT_BACKEND);
-      }
-    });
-  }
 
   function escapeId(id) {
     if (typeof CSS !== "undefined" && CSS.escape) return CSS.escape(id);
@@ -383,16 +423,17 @@
       return { text: data.simplified, source };
     }
 
+    const backendError = res.error || (data && data.error) || null;
     const fallback = localFallback(text);
     if (voiceLanguage !== "EN") {
       const translated = await fetchTranslated(fallback);
       if (translated) {
         if (window.CFAMetrics) window.CFAMetrics.recordSimplifySource("local");
-        return { text: translated, source: "local" };
+        return { text: translated, source: "local", error: backendError };
       }
     }
     if (window.CFAMetrics) window.CFAMetrics.recordSimplifySource("local");
-    return { text: fallback, source: "local" };
+    return { text: fallback, source: "local", error: backendError };
   }
 
   function translateForVoice(text) {
@@ -736,10 +777,13 @@
 
       lastSimplified = result.text;
       simple.textContent = result.text;
-      meta.textContent =
-        result.source === "local"
-          ? "Source: offline fallback (start the backend for smarter text)."
-          : `Source: ${result.source}`;
+      if (result.source === "local") {
+        meta.textContent = result.error
+          ? `Source: offline — ${result.error}. Reload the extension, then check Settings → Backend URL is http://127.0.0.1:5000`
+          : "Source: offline fallback (could not reach backend API).";
+      } else {
+        meta.textContent = `Source: ${result.source}`;
+      }
       loaded = true;
       loadedForLang = voiceLanguage;
       recordFieldTypeMetric(fieldEl, contextText);

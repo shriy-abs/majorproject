@@ -3,9 +3,20 @@
  */
 const DEFAULT_BACKEND = "http://127.0.0.1:5000";
 
+/** Keep only scheme + host so /dashboard in settings does not break API paths. */
+function normalizeBackendBase(url) {
+  const raw = (url || DEFAULT_BACKEND).trim();
+  try {
+    const u = new URL(raw);
+    return `${u.protocol}//${u.host}`;
+  } catch (_) {
+    return DEFAULT_BACKEND;
+  }
+}
+
 async function getBackendBase() {
   const items = await chrome.storage.local.get({ backendUrl: DEFAULT_BACKEND });
-  return (items.backendUrl || DEFAULT_BACKEND).replace(/\/+$/, "");
+  return normalizeBackendBase(items.backendUrl || DEFAULT_BACKEND);
 }
 
 async function postJson(path, body) {
