@@ -1,5 +1,5 @@
 """
-Simplification module: rules + optional OpenAI + optional local Ollama.
+Simplification module: hybrid contextual engine + optional OpenAI.
 """
 from __future__ import annotations
 
@@ -8,6 +8,8 @@ import re
 from typing import Optional, Tuple
 
 import requests
+
+HYBRID_SOURCE = "Hybrid Context Engine"
 
 # Friendly rewrites for common Indian / government-style form wording
 # Upload hints must come before aadhaar/address keywords that appear in the same label.
@@ -69,6 +71,11 @@ PHRASE_HINTS = [
         "Enter an email you check regularly. Example: name@gmail.com.",
     ),
     (
+        r"(?i)\bemergency\s+contact\b|\bice\s+contact\b|\bnext\s+of\s+kin\b|"
+        r"\bin\s+case\s+of\s+emergency\b|\balternate\s+contact\b",
+        "Name and phone of someone we can reach in an emergency.",
+    ),
+    (
         r"(?i)\bphone|mobile|contact\s+number\b",
         "Enter a phone number you can be reached on. Example: +91 98765 43210.",
     ),
@@ -84,6 +91,29 @@ PHRASE_HINTS = [
         r"(?i)\bpin\s*code\b",
         "Enter your 6-digit postal PIN. Example: 560001.",
     ),
+    (
+        r"(?i)\boccupation\b|\bprofession\b|\bjob\s+title\b|\bdesignation\b|"
+        r"\bemployment\s+type\b",
+        "Enter what you do for work. Example: Teacher.",
+    ),
+    (
+        r"(?i)\borganization\b|\borganisation\b|\bemployer\s+name\b|"
+        r"\bcompany\s+name\b|\binstitution\s+name\b",
+        "Enter your school, employer, or institution name.",
+    ),
+    (
+        r"(?i)\bdepartment\b|\bdept\.?\b|\bdivision\s+name\b",
+        "Enter your team or department at work or school.",
+    ),
+    (
+        r"(?i)\bremarks?\b|\bcomments?\b|\badditional\s+(?:info|information|details)\b|"
+        r"\bspecial\s+instructions?\b|\bother\s+details\b",
+        "Optional notes for reviewers. Leave blank if nothing applies.",
+    ),
+    (
+        r"(?i)\b(?:city|town)\s+name\b|\bname\s+of\s+(?:city|town)\b|\bcity\b|\btown\b",
+        "Type the city or town where you live. Example: Bangalore.",
+    ),
 ]
 
 # After PHRASE_HINTS: simple word/phrase cues for labels that did not match above.
@@ -93,7 +123,8 @@ KEYWORD_FALLBACKS = [
         "Enter a valid email address. Example: name@gmail.com.",
     ),
     (
-        r"(?i)\bphone\b|\bmobile\b|\bcell\b|\btelephone\b|\btel\.?\b|\bwhatsapp\b|\bcontact\s*(?:number|no\.?)\b|\bmob\.?\b",
+        r"(?i)\bphone\b|\bmobile\b|\bcell\b|\btelephone\b|\btel\.?\b|\bwhatsapp\b|"
+        r"(?<!emergency\s)contact\s*(?:number|no\.?)\b|\bmob\.?\b",
         "Enter your phone number. Example: 9876543210.",
     ),
     (
@@ -107,11 +138,11 @@ KEYWORD_FALLBACKS = [
     (
         r"(?i)\b(?:street|locality|pin\s*code|postal|zip|mailing|correspondence|residential|residence|permanent)\b|"
         r"\b(?:current|living)\s+address\b|\bliving\s+area\b|\baddress(?:\s*line)?\b(?!.*\bproof\b)",
-        "Enter your complete home address. Example: House No, Street, City, PIN code.",
+        "Enter where you live: house or flat, street, city, and PIN code.",
     ),
     (
         r"(?i)\bupload\b|\battach\b|\bchoose\s+file\b",
-        "Choose a file (photo or PDF) to upload. Do not type text in this field.",
+        "Use the upload button to attach a photo or PDF. Do not type text here.",
     ),
     (
         r"(?i)\b(?:full|first|last|given|family|applicant)\s+name\b|\bsurname\b|\bgiven\s+name\b|\bfamily\s+name\b|\bname\b",
@@ -119,23 +150,99 @@ KEYWORD_FALLBACKS = [
     ),
 ]
 
-# Substring groups (checked after KEYWORD_FALLBACKS regexes).
+# Semantic keyword groups (checked after regex fallbacks; first match wins).
 KEYWORD_SEMANTIC_GROUPS = [
     (
         (
-            "city",
-            "location",
-            "place",
-            "town",
-            "residence",
-            "living",
-            "current location",
+            "upload",
+            "attach file",
+            "choose file",
+            "file upload",
+            "browse file",
+            "attachment",
+            "document scan",
+            "photo upload",
+            "scan copy",
         ),
-        "Enter the city where you currently live. Example: Bangalore.",
+        "Use the upload button to attach a photo or PDF. Do not type text here.",
     ),
     (
-        ("comment", "remarks", "notes", "feedback", "description"),
-        "Enter any additional information if required. You can leave this blank if not applicable.",
+        (
+            "emergency contact",
+            "emergency no",
+            "ice contact",
+            "in case of emergency",
+            "next of kin",
+            "alternate contact",
+            "sos contact",
+        ),
+        "Name and phone of someone we can reach in an emergency.",
+    ),
+    (
+        ("department", "dept", "division", "section name", "business unit"),
+        "Enter your team or department at work or school.",
+    ),
+    (
+        (
+            "organization",
+            "organisation",
+            "company name",
+            "employer",
+            "institute",
+            "institution",
+            "firm name",
+            "org name",
+            "workplace",
+        ),
+        "Enter your school, employer, or institution name.",
+    ),
+    (
+        (
+            "occupation",
+            "profession",
+            "job title",
+            "designation",
+            "employment",
+            "work role",
+            "nature of work",
+        ),
+        "Enter what you do for work. Example: Nurse.",
+    ),
+    (
+        ("city", "town", "municipality", "taluk", "tehsil", "mandal", "village"),
+        "Type the city or town where you live.",
+    ),
+    (
+        (
+            "remark",
+            "remarks",
+            "comment",
+            "comments",
+            "additional info",
+            "other details",
+            "special instruction",
+            "feedback",
+            "note to officer",
+            "justification",
+        ),
+        "Optional notes for reviewers. Leave blank if nothing applies.",
+    ),
+    (
+        (
+            "address",
+            "street",
+            "locality",
+            "residence",
+            "residential",
+            "correspondence",
+            "mailing",
+            "house no",
+            "flat no",
+            "building",
+            "premises",
+            "location of",
+        ),
+        "Enter where you live: house or flat, street, city, and PIN code.",
     ),
 ]
 
@@ -146,9 +253,16 @@ def _clean(text: str) -> str:
     return t
 
 
+def _semantic_kw_matches(lower: str, keyword: str) -> bool:
+    """Word-boundary match for single tokens; phrase match for multi-word cues."""
+    if " " in keyword:
+        return keyword in lower
+    return re.search(rf"\b{re.escape(keyword)}\b", lower) is not None
+
+
 def _try_semantic_keyword_groups(lower: str) -> Optional[str]:
     for keywords, hint in KEYWORD_SEMANTIC_GROUPS:
-        if any(kw in lower for kw in keywords):
+        if any(_semantic_kw_matches(lower, kw) for kw in keywords):
             return hint
     return None
 
@@ -169,32 +283,25 @@ def _try_rule_hints(text: str) -> Optional[str]:
 
 
 def _generic_rule_fallback(raw: str) -> str:
-    if len(raw) <= 80:
-        return f'Enter: "{raw}".'
-    snippet = raw[:160] + ("…" if len(raw) > 160 else "")
-    return f'Enter what the label describes: "{snippet}".'
+    """Accessibility-oriented default without echoing the raw label."""
+    hint = _try_semantic_keyword_groups(raw.lower())
+    if hint:
+        return hint
+    if len(raw) <= 120:
+        return "Fill in this field with the information the form asks for."
+    return "Enter the details requested in this section of the form."
 
 
 def simplify_rules(text: str) -> str:
-    """Heuristic simplification without any network call."""
+    """Hybrid contextual simplification without any network call."""
     raw = _clean(text)
     if not raw:
         return "No label was found; ask the site owner for help or skip if optional."
 
-    lower = raw.lower()
-    for pattern, hint in PHRASE_HINTS:
-        if re.search(pattern, lower):
-            return hint
-
-    for pattern, hint in KEYWORD_FALLBACKS:
-        if re.search(pattern, lower):
-            return hint
-
-    if len(raw) <= 80:
-        return f'Enter: “{raw}”.'
-
-    snippet = raw[:160] + ("…" if len(raw) > 160 else "")
-    return f'Enter what the label describes: “{snippet}”.'
+    hint = _try_rule_hints(text)
+    if hint:
+        return hint
+    return _generic_rule_fallback(raw)
 
 
 def _lang_code(lang: str) -> str:
@@ -293,7 +400,7 @@ def _maybe_translate_fallback(english_hint: str, lang: str) -> str:
 
 def simplify_text(text: str, lang: str = "en") -> Tuple[str, str]:
     """
-    Returns (simplified_text, source) where source is 'llm', 'rules', or 'fallback'.
+    Returns (simplified_text, source) where source is 'llm' or HYBRID_SOURCE.
     lang: 'en', 'hi', or 'kn'
     """
     cleaned = _clean(text)
@@ -308,7 +415,7 @@ def simplify_text(text: str, lang: str = "en") -> Tuple[str, str]:
             empty = "ಯಾವುದೇ ಲೇಬಲ್ ಕಂಡುಬಂದಿಲ್ಲ. ಸಹಾಯಕ್ಕಾಗಿ ಸೈಟ್ ಮಾಲೀಕರನ್ನು ಕೇಳಿ ಅಥವಾ ಖಾಲಿ ಬಿಡಿ."
         else:
             empty = "No label was found; ask the site owner for help or skip if optional."
-        return empty, "rules"
+        return empty, HYBRID_SOURCE
 
     llm = simplify_openai(cleaned, lang=lang)
     if llm:
@@ -324,7 +431,7 @@ def simplify_text(text: str, lang: str = "en") -> Tuple[str, str]:
             )
             if improved != _generic_rule_fallback(cleaned):
                 return improved, "llm"
-        return result, "rules"
+        return result, HYBRID_SOURCE
 
     if use_kn:
         from simplify_kn import simplify_rules_kn
@@ -336,6 +443,6 @@ def simplify_text(text: str, lang: str = "en") -> Tuple[str, str]:
             )
             if improved != _generic_rule_fallback(cleaned):
                 return improved, "llm"
-        return result, "rules"
+        return result, HYBRID_SOURCE
 
-    return simplify_rules(cleaned), "rules"
+    return simplify_rules(cleaned), HYBRID_SOURCE
