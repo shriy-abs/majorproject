@@ -92,9 +92,26 @@ def translate_openai(text: str, lang: str = "hi") -> Optional[str]:
         return None
 
 
+def _rules_translate(cleaned: str, lang: str) -> Optional[str]:
+    """Use simplification rules when the input looks like a field label."""
+    if lang == "hi":
+        from simplify_hi import simplify_rules_hi
+
+        result = simplify_rules_hi(cleaned)
+        if result and not result.startswith("यहाँ भरें:") and not result.startswith("लेबल के अनुसार"):
+            return result
+    if lang == "kn":
+        from simplify_kn import simplify_rules_kn
+
+        result = simplify_rules_kn(cleaned)
+        if result and not result.startswith("ಇಲ್ಲಿ ನಮೂದಿಸಿ:") and not result.startswith("ಲೇಬಲ್ ಪ್ರಕಾರ"):
+            return result
+    return None
+
+
 def translate_text(text: str, lang: str = "hi") -> tuple[str, str]:
     """
-    Returns (translated_text, source) where source is 'llm' or 'passthrough'.
+    Returns (translated_text, source) where source is 'llm', 'rules', or 'passthrough'.
     """
     cleaned = _clean(text)
     lang = (lang or "hi").lower()[:2]
@@ -103,7 +120,15 @@ def translate_text(text: str, lang: str = "hi") -> tuple[str, str]:
     if not cleaned:
         return _LANG_META[lang]["empty"], "passthrough"
 
+    if _looks_translated(cleaned, lang):
+        return cleaned, "passthrough"
+
     llm = translate_openai(cleaned, lang=lang)
     if llm:
         return llm, "llm"
+
+    rules = _rules_translate(cleaned, lang)
+    if rules:
+        return rules, "rules"
+
     return cleaned, "passthrough"

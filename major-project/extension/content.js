@@ -30,8 +30,25 @@
   let focusedFieldEl = null;
   let typoFlashTimer = null;
   const translationCache = new Map();
+  const panelReloadRegistry = [];
 
   const VALID_LANGS = new Set(["EN", "HI", "KN"]);
+
+  function backendPost(path, body) {
+    return new Promise((resolve) => {
+      if (!chrome.runtime?.sendMessage) {
+        resolve({ ok: false, error: "no runtime" });
+        return;
+      }
+      chrome.runtime.sendMessage({ type: "cfaApi", path, body }, (response) => {
+        if (chrome.runtime.lastError) {
+          resolve({ ok: false, error: chrome.runtime.lastError.message });
+          return;
+        }
+        resolve(response || { ok: false, error: "empty response" });
+      });
+    });
+  }
 
   function normalizeLang(value) {
     const v = (value || "EN").toUpperCase();
@@ -53,6 +70,19 @@
       voiceLanguage = normalizeLang(changes.voiceLanguage.newValue);
       translationCache.clear();
       if (window.CFAMetrics) window.CFAMetrics.recordLanguage(voiceLanguage);
+      panelReloadRegistry.forEach((reload) => {
+        try {
+          reload();
+        } catch (_) {
+          /* ignore */
+        }
+      });
+      if (focusedFieldEl) {
+        const api = widgetByField.get(focusedFieldEl);
+        const ctx = extractFieldContext(focusedFieldEl);
+        const result = api ? api.refreshValidation() : runFieldValidation(focusedFieldEl, ctx);
+        applyVisualState(focusedFieldEl, result);
+      }
     }
   });
 
@@ -301,8 +331,12 @@
 
   function localFallback(raw) {
     const t = (raw || "").trim();
-    if (!t) return "Enter the value this field is asking for.";
-    return `This field is asking for: ${t}. Use simple words and double-check before you submit.`;
+    const en = !t
+      ? "Enter the value this field is asking for."
+      : `This field is asking for: ${t}. Use simple words and double-check before you submit.`;
+    if (voiceLanguage === "EN") return en;
+    const voiced = translateForVoice(en);
+    return voiced !== en ? voiced : en;
   }
 
   function recordFieldTypeMetric(fieldEl, contextText) {
@@ -316,47 +350,39 @@
     const key = `${voiceLanguage}:${text}`;
     if (translationCache.has(key)) return translationCache.get(key);
 
-    const base = await getBackendBase();
-    try {
-      const r = await fetch(`${base}/api/translate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, lang: langToApiCode(voiceLanguage) }),
-      });
-      const data = await r.json();
-      if (data && data.ok && data.translated) {
-        translationCache.set(key, data.translated);
-        return data.translated;
-      }
-    } catch (_) {
-      /* offline */
+    const lang = langToApiCode(voiceLanguage);
+    if (lang === "en") return text;
+
+    const res = await backendPost("/api/translate", { text, lang });
+    const data = res.ok ? res.data : null;
+    if (data && data.ok && data.translated) {
+      translationCache.set(key, data.translated);
+      return data.translated;
+    }
+
+    const voiced = translateForVoice(text);
+    if (voiced !== text) {
+      translationCache.set(key, voiced);
+      return voiced;
     }
     return null;
   }
 
   async function fetchSimplified(text) {
     const t0 = performance.now();
-    const base = await getBackendBase();
-    try {
-      const r = await fetch(`${base}/api/simplify`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text,
-          lang: langToApiCode(voiceLanguage),
-        }),
-      });
-      const data = await r.json();
-      const ms = performance.now() - t0;
-      if (window.CFAMetrics) window.CFAMetrics.recordLatency(ms);
-      if (data && data.ok && data.simplified) {
-        const source = data.source || "api";
-        if (window.CFAMetrics) window.CFAMetrics.recordSimplifySource(source);
-        return { text: data.simplified, source };
-      }
-    } catch (_) {
-      if (window.CFAMetrics) window.CFAMetrics.recordLatency(performance.now() - t0);
+    const lang = langToApiCode(voiceLanguage);
+
+    const res = await backendPost("/api/simplify", { text, lang });
+    const ms = performance.now() - t0;
+    if (window.CFAMetrics) window.CFAMetrics.recordLatency(ms);
+
+    const data = res.ok ? res.data : null;
+    if (data && data.ok && data.simplified) {
+      const source = data.source || "api";
+      if (window.CFAMetrics) window.CFAMetrics.recordSimplifySource(source);
+      return { text: data.simplified, source };
     }
+
     const fallback = localFallback(text);
     if (voiceLanguage !== "EN") {
       const translated = await fetchTranslated(fallback);
@@ -593,6 +619,7 @@
     root.appendChild(panel);
 
     let loaded = false;
+    let loadedForLang = "";
     let lastSimplified = "";
     let lastValidationText = "";
 
@@ -636,6 +663,7 @@
     }
 
     async function loadPanel() {
+      const langAtStart = voiceLanguage;
       orig.textContent = contextText
         ? `Original: ${contextText}`
         : "Original: (no label found — using field name or placeholder.)";
@@ -645,6 +673,8 @@
       simple.textContent = "Loading…";
       meta.textContent = "";
       const result = await fetchSimplified(contextText || fieldEl.name || "form field");
+      if (langAtStart !== voiceLanguage) return;
+
       lastSimplified = result.text;
       simple.textContent = result.text;
       meta.textContent =
@@ -652,15 +682,32 @@
           ? "Source: offline fallback (start the backend for smarter text)."
           : `Source: ${result.source}`;
       loaded = true;
+      loadedForLang = voiceLanguage;
       recordFieldTypeMetric(fieldEl, contextText);
       if (window.CFAMetrics) window.CFAMetrics.bump("fieldsExplained");
     }
+
+    async function reloadForLanguage() {
+      loaded = false;
+      loadedForLang = "";
+      lastSimplified = "";
+      refreshValidation();
+      if (!panel.hidden) {
+        await loadPanel();
+      } else {
+        simple.textContent = "";
+        meta.textContent = "";
+      }
+    }
+
+    panelReloadRegistry.push(reloadForLanguage);
 
     btn.addEventListener("click", async () => {
       const willOpen = panel.hidden;
       if (willOpen) {
         refreshValidation();
-        if (!loaded) await loadPanel();
+        const needsLoad = !loaded || loadedForLang !== voiceLanguage;
+        if (needsLoad) await loadPanel();
       }
       setOpen(willOpen);
       if (willOpen) (validation.hidden ? simple : validation).focus();
@@ -682,8 +729,9 @@
       refreshValidation,
       getSpeakText: () => lastValidationText || lastSimplified,
       preloadIfNeeded: async () => {
-        if (!loaded) await loadPanel();
+        if (!loaded || loadedForLang !== voiceLanguage) await loadPanel();
       },
+      reloadForLanguage,
     };
     widgetByField.set(fieldEl, api);
 

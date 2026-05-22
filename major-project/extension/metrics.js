@@ -2,6 +2,19 @@
  * Session analytics — local storage + sync to backend dashboard.
  */
 (function () {
+  const STORAGE_KEYS = [
+    "fieldsExplained",
+    "validationErrorsPrevented",
+    "voiceAssistsTriggered",
+    "pagesSummarized",
+    "totalLatency",
+    "responseCount",
+    "fieldTypesProcessed",
+    "languageBreakdown",
+    "simplifySourceBreakdown",
+    "events",
+  ];
+
   const METRIC_DEFAULTS = {
     fieldsExplained: 0,
     validationErrorsPrevented: 0,
@@ -15,34 +28,31 @@
     events: [],
   };
 
-  const DEFAULT_BACKEND = "http://127.0.0.1:5000";
   let syncTimer = null;
 
   function safeGet(cb) {
     try {
-      chrome.storage.local.get(METRIC_DEFAULTS, cb);
-    } catch (_) {
-      cb(METRIC_DEFAULTS);
-    }
-  }
-
-  function getBackendBase(cb) {
-    try {
-      chrome.storage.local.get({ backendUrl: DEFAULT_BACKEND }, (items) => {
-        cb((items.backendUrl || DEFAULT_BACKEND).replace(/\/+$/, ""));
+      chrome.storage.local.get(STORAGE_KEYS, (items) => {
+        cb({ ...METRIC_DEFAULTS, ...items });
       });
     } catch (_) {
-      cb(DEFAULT_BACKEND);
+      cb({ ...METRIC_DEFAULTS });
     }
   }
 
-  function appendEvent(type, detail) {
-    safeGet((items) => {
-      const events = Array.isArray(items.events) ? [...items.events] : [];
-      events.push({ t: Date.now() / 1000, type, detail: detail || "" });
-      if (events.length > 200) events.splice(0, events.length - 200);
-      chrome.storage.local.set({ events });
-    });
+  function safeSet(partial, done) {
+    try {
+      chrome.storage.local.set(partial, done);
+    } catch (_) {
+      if (done) done();
+    }
+  }
+
+  function appendEvent(items, type, detail) {
+    const events = Array.isArray(items.events) ? [...items.events] : [];
+    events.push({ t: Date.now() / 1000, type, detail: detail || "" });
+    if (events.length > 200) events.splice(0, events.length - 200);
+    return events;
   }
 
   function scheduleSync() {
@@ -51,41 +61,43 @@
   }
 
   function syncToBackend() {
+    if (!chrome.runtime?.sendMessage) return;
+
     safeGet((items) => {
-      getBackendBase((base) => {
-        const payload = {
-          fieldsExplained: items.fieldsExplained || 0,
-          validationErrorsPrevented: items.validationErrorsPrevented || 0,
-          voiceAssistsTriggered: items.voiceAssistsTriggered || 0,
-          pagesSummarized: items.pagesSummarized || 0,
-          totalLatency: items.totalLatency || 0,
-          responseCount: items.responseCount || 0,
-          fieldTypesProcessed: items.fieldTypesProcessed || {},
-          languageBreakdown: items.languageBreakdown || { EN: 0, HI: 0, KN: 0 },
-          simplifySourceBreakdown: items.simplifySourceBreakdown || { llm: 0, rules: 0, local: 0 },
-          events: items.events || [],
-        };
-        fetch(`${base}/api/metrics`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }).catch(() => {});
+      const payload = {
+        fieldsExplained: items.fieldsExplained || 0,
+        validationErrorsPrevented: items.validationErrorsPrevented || 0,
+        voiceAssistsTriggered: items.voiceAssistsTriggered || 0,
+        pagesSummarized: items.pagesSummarized || 0,
+        totalLatency: items.totalLatency || 0,
+        responseCount: items.responseCount || 0,
+        fieldTypesProcessed: items.fieldTypesProcessed || {},
+        languageBreakdown: items.languageBreakdown || { EN: 0, HI: 0, KN: 0 },
+        simplifySourceBreakdown: items.simplifySourceBreakdown || { llm: 0, rules: 0, local: 0 },
+        events: items.events || [],
+      };
+      chrome.runtime.sendMessage({ type: "cfaMetricsSync", payload }, () => {
+        void chrome.runtime.lastError;
       });
     });
   }
 
   function bump(key, delta = 1) {
     safeGet((items) => {
-      const next = { [key]: (items[key] || 0) + delta };
-      chrome.storage.local.set(next, scheduleSync);
-      appendEvent(key);
+      safeSet(
+        {
+          [key]: (items[key] || 0) + delta,
+          events: appendEvent(items, key),
+        },
+        scheduleSync
+      );
     });
   }
 
   function recordLatency(ms) {
     if (!Number.isFinite(ms) || ms < 0) return;
     safeGet((items) => {
-      chrome.storage.local.set(
+      safeSet(
         {
           totalLatency: (items.totalLatency || 0) + ms,
           responseCount: (items.responseCount || 0) + 1,
@@ -100,8 +112,13 @@
     safeGet((items) => {
       const map = { ...(items.fieldTypesProcessed || {}) };
       map[key] = (map[key] || 0) + 1;
-      chrome.storage.local.set({ fieldTypesProcessed: map }, scheduleSync);
-      appendEvent("fieldType", key);
+      safeSet(
+        {
+          fieldTypesProcessed: map,
+          events: appendEvent(items, "fieldType", key),
+        },
+        scheduleSync
+      );
     });
   }
 
@@ -110,7 +127,7 @@
     safeGet((items) => {
       const map = { ...(items.languageBreakdown || { EN: 0, HI: 0, KN: 0 }) };
       map[key] = (map[key] || 0) + 1;
-      chrome.storage.local.set({ languageBreakdown: map }, scheduleSync);
+      safeSet({ languageBreakdown: map }, scheduleSync);
     });
   }
 
@@ -119,7 +136,7 @@
     safeGet((items) => {
       const map = { ...(items.simplifySourceBreakdown || { llm: 0, rules: 0, local: 0 }) };
       map[key] = (map[key] || 0) + 1;
-      chrome.storage.local.set({ simplifySourceBreakdown: map }, scheduleSync);
+      safeSet({ simplifySourceBreakdown: map }, scheduleSync);
     });
   }
 

@@ -1,5 +1,5 @@
 /**
- * Kannada voice translations — phrases for TTS.
+ * Kannada voice translations — phrases for TTS and display fallback.
  */
 (function () {
   const EXACT = [
@@ -17,15 +17,27 @@
     ],
     [
       "Phone numbers should use digits only. Remove letters and symbols except + if needed.",
-      "ಫೋನ್ ಸಂಖ್ಯೆಯಲ್ಲಿ ಅಂಕಿಗಳು ಮಾತ್ರ ಇರಬೇಕು. ಅಕ್ಷರಗಳನ್ನು ತೆಗೆದುಹಾಕಿ.",
+      "ಫೋನ್ ಸಂಖ್ಯೆಯಲ್ಲಿ ಅಂಕಿಗಳು ಮಾತ್ರ ಇರಬೇಕು. ಅಕ್ಷರಗಳನ್ನು ತೆಗೆದುಹಾಕಿ. + ಚಿಹ್ನೆ ಬಳಸಬಹುದು.",
     ],
     [
       "Enter your home address exactly as on official documents. Example: House no., street, city, PIN code.",
-      "ಅಧಿಕೃತ ದಾಖಲೆಗಳಲ್ಲಿರುವಂತೆ ನಿಮ್ಮ ಸಂಪೂರ್ಣ ಮನೆಯ ವಿಳಾಸವನ್ನು ನಮೂದಿಸಿ.",
+      "ಅಧಿಕೃತ ದಾಖಲೆಗಳಲ್ಲಿರುವಂತೆ ನಿಮ್ಮ ಸಂಪೂರ್ಣ ಮನೆಯ ವಿಳಾಸವನ್ನು ನಮೂದಿಸಿ. ಉದಾಹರಣೆ: ಮನೆ ಸಂಖ್ಯೆ, ಬೀದಿ, ನಗರ, ಪಿನ್ ಕೋಡ್.",
     ],
     [
       "Enter your full legal name as printed on your ID. Example: Priya Sharma.",
       "ಐಡಿಯಲ್ಲಿರುವಂತೆ ನಿಮ್ಮ ಪೂರ್ಣ ಹೆಸರನ್ನು ನಮೂದಿಸಿ. ಉದಾಹರಣೆ: ಪ್ರಿಯಾ ಶರ್ಮಾ.",
+    ],
+    [
+      "Pick the calendar day you were born. Example: 15 March 1998.",
+      "ನೀವು ಹುಟ್ಟಿದ ದಿನಾಂಕವನ್ನು ಆಯ್ಕೆಮಾಡಿ. ಉದಾಹರಣೆ: 15 ಮಾರ್ಚ್ 1998.",
+    ],
+    [
+      "Enter your household's total yearly income before tax, in numbers. Example: 450000.",
+      "ಕುಟುಂಬದ ವಾರ್ಷಿಕ ಆದಾಯವನ್ನು ತೆರಿಗೆಗೆ ಮೊದಲು ಸಂಖ್ಯೆಯಲ್ಲಿ ನಮೂದಿಸಿ. ಉದಾಹರಣೆ: 450000.",
+    ],
+    [
+      "Enter your 12-digit Aadhaar with no spaces. Example: 123456789012.",
+      "ಖಾಲಿ ಜಾಗವಿಲ್ಲದೆ 12 ಅಂಕಿಯ ಆಧಾರ್ ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ. ಉದಾಹರಣೆ: 123456789012.",
     ],
     [
       "Enter an email you check regularly. Example: name@gmail.com.",
@@ -33,19 +45,59 @@
     ],
     [
       "Enter a phone number you can be reached on. Example: +91 98765 43210.",
-      "ನಿಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸಲು ಸಾಧ್ಯವಾದ ಫೋನ್ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ.",
+      "ನಿಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸಲು ಸಾಧ್ಯವಾದ ಫೋನ್ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ. ಉದಾಹರಣೆ: +91 9876543210.",
+    ],
+    [
+      "Upload a clear scan or photo of a government ID. Example: Aadhaar PDF or JPEG.",
+      "ಸರ್ಕಾರಿ ಐಡಿಯ ಸ್ಪಷ್ಟ ಫೋಟೋ ಅಥವಾ ಸ್ಕ್ಯಾನ್ ಅಪ್ಲೋಡ್ ಮಾಡಿ.",
+    ],
+    [
+      "Choose the category that matches you best. Example: Student.",
+      "ನಿಮಗೆ ಸರಿಯಾದ ವರ್ಗವನ್ನು ಆಯ್ಕೆಮಾಡಿ. ಉದಾಹರಣೆ: ವಿದ್ಯಾರ್ಥಿ.",
+    ],
+    [
+      "Enter your 10-character PAN as on the card. Example: ABCDE1234F.",
+      "ಪ್ಯಾನ್ ಕಾರ್ಡ್ನಲ್ಲಿರುವಂತೆ 10 ಅಕ್ಷರದ ಪ್ಯಾನ್ ನಮೂದಿಸಿ. ಉದಾಹರಣೆ: ABCDE1234F.",
+    ],
+    [
+      "Enter your 6-digit postal PIN. Example: 560001.",
+      "6 ಅಂಕಿಯ ಪಿನ್ ಕೋಡ್ ನಮೂದಿಸಿ. ಉದಾಹರಣೆ: 560001.",
     ],
     [
       "Enter a valid email address. Example: name@gmail.com.",
-      "ಸರಿಯಾದ ಇಮೇಲ್ ವಿಳಾಸ ನಮೂದಿಸಿ.",
+      "ಸರಿಯಾದ ಇಮೇಲ್ ವಿಳಾಸ ನಮೂದಿಸಿ. ಉದಾಹರಣೆ: hesaru@gmail.com.",
     ],
     [
       "Enter your phone number. Example: 9876543210.",
       "ನಿಮ್ಮ ಫೋನ್ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ. ಉದಾಹರಣೆ: 9876543210.",
     ],
     [
+      "Enter your date of birth. Example: 15 March 2000.",
+      "ನಿಮ್ಮ ಜನ್ಮ ದಿನಾಂಕ ನಮೂದಿಸಿ. ಉದಾಹರಣೆ: 15 ಮಾರ್ಚ್ 2000.",
+    ],
+    [
+      "Enter your yearly income in numbers. Example: 500000.",
+      "ವಾರ್ಷಿಕ ಆದಾಯವನ್ನು ಸಂಖ್ಯೆಯಲ್ಲಿ ನಮೂದಿಸಿ. ಉದಾಹರಣೆ: 500000.",
+    ],
+    [
+      "Enter your complete home address. Example: House No, Street, City, PIN code.",
+      "ಸಂಪೂರ್ಣ ಮನೆಯ ವಿಳಾಸ ನಮೂದಿಸಿ. ಉದಾಹರಣೆ: ಮನೆ ಸಂಖ್ಯೆ, ಬೀದಿ, ನಗರ, ಪಿನ್ ಕೋಡ್.",
+    ],
+    [
+      "Enter your full name as per official records. Example: Priya Sharma.",
+      "ಅಧಿಕೃತ ದಾಖಲೆಗಳ ಪ್ರಕಾರ ಪೂರ್ಣ ಹೆಸರು ನಮೂದಿಸಿ. ಉದಾಹರಣೆ: ಪ್ರಿಯಾ ಶರ್ಮಾ.",
+    ],
+    [
+      "Enter the city where you currently live. Example: Bangalore.",
+      "ನೀವು ವಾಸಿಸುವ ನಗರ ನಮೂದಿಸಿ. ಉದಾಹರಣೆ: ಬೆಂಗಳೂರು.",
+    ],
+    [
+      "Enter any additional information if required. You can leave this blank if not applicable.",
+      "ಅಗತ್ಯವಿದ್ದರೆ ಹೆಚ್ಚುವರಿ ಮಾಹಿತಿ ನಮೂದಿಸಿ. ಇಲ್ಲದಿದ್ದರೆ ಖಾಲಿ ಬಿಡಬಹುದು.",
+    ],
+    [
       "No label was found; ask the site owner for help or skip if optional.",
-      "ಯಾವುದೇ ಲೇಬಲ್ ಕಂಡುಬಂದಿಲ್ಲ. ಸಹಾಯಕ್ಕಾಗಿ ಸೈಟ್ ಮಾಲೀಕರನ್ನು ಕೇಳಿ.",
+      "ಯಾವುದೇ ಲೇಬಲ್ ಕಂಡುಬಂದಿಲ್ಲ. ಸಹಾಯಕ್ಕಾಗಿ ಸೈಟ್ ಮಾಲೀಕರನ್ನು ಕೇಳಿ ಅಥವಾ ಖಾಲಿ ಬಿಡಿ.",
     ],
     [
       "Enter the value this field is asking for.",
@@ -90,6 +142,11 @@
     out = out.replace(
       /This field is asking for: (.+)\. Use simple words/,
       "ಈ ಫೀಲ್ಡ್ ಕೇಳುತ್ತಿದೆ: $1. ಸರಳ ಪದಗಳಲ್ಲಿ ನಮೂದಿಸಿ"
+    );
+    out = out.replace(/^Enter: [""](.+)[""]\.$/, "ಇಲ್ಲಿ ನಮೂದಿಸಿ: $1.");
+    out = out.replace(
+      /^Enter what the label describes: [""](.+)[""]\.$/,
+      "ಲೇಬಲ್ ಪ್ರಕಾರ ನಮೂದಿಸಿ: $1."
     );
 
     return out;
