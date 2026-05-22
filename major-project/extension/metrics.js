@@ -149,4 +149,8 @@
     recordSimplifySource,
     syncToBackend,
   };
+
+  // Push existing session data to dashboard on load and periodically.
+  syncToBackend();
+  setInterval(syncToBackend, 15000);
 })();

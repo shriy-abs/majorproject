@@ -17,6 +17,18 @@ PHRASE_HINTS = [
         "Example: House no., street, city, PIN code.",
     ),
     (
+        r"(?i)\bfather'?s?\s+name\b|\bfather\s+name\b|\bname\s+of\s+(?:the\s+)?father\b|\bpaternal\s+name\b",
+        "Enter your father's full name as on official records.",
+    ),
+    (
+        r"(?i)\bmother'?s?\s+name\b|\bmother\s+name\b|\bname\s+of\s+(?:the\s+)?mother\b|\bmaternal\s+name\b",
+        "Enter your mother's full name as on official records.",
+    ),
+    (
+        r"(?i)\b(?:guardian|spouse)'?s?\s+name\b|\bname\s+of\s+(?:the\s+)?guardian\b",
+        "Enter the guardian or spouse's full name as on official records.",
+    ),
+    (
         r"(?i)\b(full\s+name|applicant'?s?\s+name)\b",
         "Enter your full legal name as printed on your ID. Example: Priya Sharma.",
     ),
@@ -82,7 +94,7 @@ KEYWORD_FALLBACKS = [
         "Enter your complete home address. Example: House No, Street, City, PIN code.",
     ),
     (
-        r"(?i)\b(?:full|first|last|given|family|applicant)\s+name\b|\bname\s+of\b|\bfather'?s?\s+name\b|\bmother'?s?\s+name\b|\b(?:guardian|spouse)'?s?\s+name\b|\bsurname\b|\bgiven\s+name\b|\bfamily\s+name\b|\bname\b",
+        r"(?i)\b(?:full|first|last|given|family|applicant)\s+name\b|\bsurname\b|\bgiven\s+name\b|\bfamily\s+name\b|\bname\b",
         "Enter your full name as per official records. Example: Priya Sharma.",
     ),
 ]
@@ -190,7 +202,8 @@ def simplify_openai(text: str, lang: str = "en") -> Optional[str]:
         )
         system = (
             "आप भारतीय सरकारी और वेब फॉर्म के लेबल को सरल, प्राकृतिक हिंदी में समझाते हैं। "
-            "अंग्रेज़ी लेबल का पूरा अर्थ हिंदी में दें, केवल लिप्यंतरण न करें।"
+            "अंग्रेज़ी लेबल का पूरा अर्थ हिंदी में दें, केवल लिप्यंतरण न करें। "
+            "Father's name = पिता का नाम (not applicant's own name). Mother's name = माता का नाम."
         )
     elif lang == "kn":
         prompt = (
@@ -203,7 +216,8 @@ def simplify_openai(text: str, lang: str = "en") -> Optional[str]:
         )
         system = (
             "ನೀವು ಭಾರತೀಯ ಸರ್ಕಾರಿ ಮತ್ತು ವೆಬ್ ಫಾರ್ಮ್ ಲೇಬಲ್ಗಳನ್ನು ಸರಳ, ನೈಸರ್ಗಿಕ ಕನ್ನಡದಲ್ಲಿ ವಿವರಿಸುತ್ತೀರಿ. "
-            "ಇಂಗ್ಲಿಷ್ ಲೇಬಲ್ನ ಸಂಪೂರ್ಣ ಅರ್ಥವನ್ನು ಕನ್ನಡದಲ್ಲಿ ನೀಡಿ, ಕೇವಲ ಲಿಪ್ಯಂತರಣ ಮಾಡಬೇಡಿ."
+            "ಇಂಗ್ಲಿಷ್ ಲೇಬಲ್ನ ಸಂಪೂರ್ಣ ಅರ್ಥವನ್ನು ಕನ್ನಡದಲ್ಲಿ ನೀಡಿ, ಕೇವಲ ಲಿಪ್ಯಂತರಣ ಮಾಡಬೇಡಿ. "
+            "Father's name = ತಂದೆಯ ಹೆಸರು (not your own name). Mother's name = ತಾಯಿಯ ಹೆಸರು."
         )
     else:
         prompt = (

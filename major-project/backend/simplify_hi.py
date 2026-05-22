@@ -52,8 +52,16 @@ PHRASE_HINTS_HI = [
         "6 अंकों का पिन कोड लिखें। उदाहरण: 560001।",
     ),
     (
-        r"(?i)\bfather'?s?\s+name\b",
-        "पिता या अभिभावक का पूरा नाम लिखें।",
+        r"(?i)\bfather'?s?\s+name\b|\bfather\s+name\b|\bname\s+of\s+(?:the\s+)?father\b|\bpaternal\s+name\b",
+        "अपने पिता का पूरा नाम लिखें, अपना नाम नहीं।",
+    ),
+    (
+        r"(?i)\bmother'?s?\s+name\b|\bmother\s+name\b|\bname\s+of\s+(?:the\s+)?mother\b|\bmaternal\s+name\b",
+        "अपनी माता का पूरा नाम लिखें, अपना नाम नहीं।",
+    ),
+    (
+        r"(?i)\b(?:guardian|spouse)'?s?\s+name\b|\bname\s+of\s+(?:the\s+)?guardian\b",
+        "अभिभावक या पति/पत्नी का पूरा नाम लिखें।",
     ),
     (
         r"(?i)\bpassword\b",
@@ -84,7 +92,7 @@ KEYWORD_FALLBACKS_HI = [
         "पूरा घर का पता और पिन कोड लिखें। उदाहरण: मकान नंबर, गली, शहर, पिन कोड।",
     ),
     (
-        r"(?i)\b(?:full|first|last|given|family|applicant)\s+name\b|\bname\s+of\b|\bfather'?s?\s+name\b|\bmother'?s?\s+name\b|\b(?:guardian|spouse)'?s?\s+name\b|\bsurname\b|\bname\b",
+        r"(?i)\b(?:full|first|last|given|family|applicant)\s+name\b|\bsurname\b|\bname\b",
         "पूरा नाम लिखें। उदाहरण: प्रिया शर्मा।",
     ),
     (

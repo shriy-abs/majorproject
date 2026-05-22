@@ -414,16 +414,7 @@
     const voices = window.speechSynthesis.getVoices();
     if (!voices.length) return null;
     const prefix = langCode.split("-")[0].toLowerCase();
-    const matchers = {
-      hi: /hindi|hi-|india/i,
-      kn: /kannada|kn-|india/i,
-    };
-    const extra = matchers[prefix];
-    return (
-      (extra && voices.find((v) => v.lang && v.lang.toLowerCase().startsWith(prefix) && extra.test(v.name + v.lang))) ||
-      voices.find((v) => v.lang && v.lang.toLowerCase().startsWith(prefix)) ||
-      null
-    );
+    return voices.find((v) => v.lang && v.lang.toLowerCase().startsWith(prefix)) || null;
   }
 
   function ttsLangCode() {
@@ -432,38 +423,89 @@
     return "en-US";
   }
 
-  function speakMultilingual(text) {
+  function hasIndicScript(text) {
+    return /[\u0900-\u097F\u0C80-\u0CFF]/.test(text || "");
+  }
+
+  /** Strip punctuation that English TTS reads as isolated "dot" sounds. */
+  function prepareTextForTts(text) {
+    return (text || "")
+      .replace(/\u0964/g, ", ")
+      .replace(/[।]/g, ", ")
+      .replace(/^•\s*/gm, "")
+      .replace(/\s*[.:]\s*/g, ", ")
+      .replace(/,(\s*,)+/g, ",")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function englishVoiceFallback(contextText) {
+    const ctx = (contextText || "").trim();
+    if (!ctx) return "";
+    const first = ctx.split(/[.;]/)[0].trim();
+    return translateForVoice(first) !== first ? translateForVoice(first) : first;
+  }
+
+  function speakMultilingual(text, contextText) {
     const line = (text || "").trim();
     if (!line) return;
-    try {
-      window.speechSynthesis.cancel();
-      const spoken = translateForVoice(line);
-      const u = new SpeechSynthesisUtterance(spoken);
-      const langCode = ttsLangCode();
-      u.lang = langCode;
-      u.rate = 0.92;
-      const voice = pickVoiceForLang(langCode);
-      if (voice) u.voice = voice;
-      window.speechSynthesis.speak(u);
-      if (voiceLanguage !== "EN" && spoken === line) {
-        fetchTranslated(line).then((translated) => {
-          if (translated && translated !== line) {
-            window.speechSynthesis.cancel();
-            const u2 = new SpeechSynthesisUtterance(translated);
-            u2.lang = langCode;
-            u2.rate = 0.92;
-            if (voice) u2.voice = voice;
-            window.speechSynthesis.speak(u2);
+
+    const runSpeak = () => {
+      try {
+        window.speechSynthesis.cancel();
+
+        let langCode = ttsLangCode();
+        let voice = pickVoiceForLang(langCode);
+        let spoken = line;
+
+        // Kannada/Hindi script with no native voice: English TTS only reads dots — use label context.
+        if (voiceLanguage !== "EN" && hasIndicScript(line) && !voice) {
+          const fallback = englishVoiceFallback(contextText) || translateForVoice(line);
+          if (fallback && !hasIndicScript(fallback)) {
+            spoken = prepareTextForTts(fallback);
+            langCode = "en-IN";
+            voice = pickVoiceForLang(langCode) || pickVoiceForLang("en-US");
+          } else {
+            spoken = prepareTextForTts(line);
           }
-        });
+        } else if (voiceLanguage !== "EN") {
+          spoken = line.replace(/\u0964/g, ", ").replace(/[।]/g, ", ");
+          const voiced = translateForVoice(line);
+          if (voiced !== line && !hasIndicScript(voiced)) {
+            spoken = prepareTextForTts(voiced);
+            langCode = "en-IN";
+            voice = pickVoiceForLang(langCode) || pickVoiceForLang("en-US");
+          }
+        } else {
+          spoken = prepareTextForTts(line);
+        }
+
+        if (!spoken) return;
+
+        const u = new SpeechSynthesisUtterance(spoken);
+        u.lang = langCode;
+        u.rate = 0.9;
+        if (voice) u.voice = voice;
+        window.speechSynthesis.speak(u);
+      } catch (_) {
+        /* no TTS */
       }
-    } catch (_) {
-      /* no TTS */
+    };
+
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length) {
+      runSpeak();
+      return;
     }
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.onvoiceschanged = null;
+      runSpeak();
+    };
+    window.speechSynthesis.getVoices();
+    setTimeout(runSpeak, 250);
   }
 
   if (window.speechSynthesis) {
-    window.speechSynthesis.onvoiceschanged = () => {};
     window.speechSynthesis.getVoices();
   }
 
@@ -539,6 +581,21 @@
     }
   }
 
+  function labelVoiceHint(contextText) {
+    const blob = (contextText || "").toLowerCase();
+    if (/\bfather\b|\bpaternal\b|\bdad\b/.test(blob) && /\bname\b/.test(blob)) {
+      if (voiceLanguage === "HI") return "अपने पिता का पूरा नाम लिखें।";
+      if (voiceLanguage === "KN") return "ನಿಮ್ಮ ತಂದೆಯ ಪೂರ್ಣ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.";
+      return "Enter your father's full name.";
+    }
+    if (/\bmother\b|\bmaternal\b/.test(blob) && /\bname\b/.test(blob)) {
+      if (voiceLanguage === "HI") return "अपनी माता का पूरा नाम लिखें।";
+      if (voiceLanguage === "KN") return "ನಿಮ್ಮ ತಾಯಿಯ ಪೂರ್ಣ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.";
+      return "Enter your mother's full name.";
+    }
+    return null;
+  }
+
   function pickFocusVoiceMessage(api, result, contextText, fieldEl) {
     if (result.typo) return result.typo;
     if (result.messages && result.messages.length) return result.messages[0];
@@ -546,6 +603,8 @@
       const custom = api.getSpeakText();
       if (custom && custom !== "Loading…") return custom.replace(/^•\s*/gm, "").split("\n")[0];
     }
+    const labelHint = labelVoiceHint(contextText);
+    if (labelHint) return labelHint;
     if (voiceLanguage !== "EN" && fieldEl) {
       const kind = detectFieldKind(fieldEl, contextText);
       const voiceMod = voiceLanguage === "KN" ? window.CFAVoiceKN : window.CFAVoiceHI;
@@ -717,7 +776,7 @@
 
     speakBtn.addEventListener("click", () => {
       const msg = lastValidationText || lastSimplified || simple.textContent || contextText;
-      speakMultilingual(msg);
+      speakMultilingual(msg, contextText);
       if (window.CFAMetrics) window.CFAMetrics.bump("voiceAssistsTriggered");
     });
 
@@ -785,7 +844,7 @@
 
     const speakLine = pickFocusVoiceMessage(api, result, ctx, el);
     if (speakLine) {
-      speakMultilingual(speakLine);
+      speakMultilingual(speakLine, ctx);
       if (window.CFAMetrics) window.CFAMetrics.bump("voiceAssistsTriggered");
     }
 
@@ -964,6 +1023,7 @@
 
   function init() {
     scan();
+    if (window.CFAMetrics) window.CFAMetrics.syncToBackend();
 
     document.addEventListener("input", onFormFieldEvent, true);
     document.addEventListener("blur", onFormFieldEvent, true);

@@ -51,8 +51,16 @@ PHRASE_HINTS_KN = [
         "6 ಅಂಕಿಯ ಪಿನ್ ಕೋಡ್ ನಮೂದಿಸಿ. ಉದಾಹರಣೆ: 560001.",
     ),
     (
-        r"(?i)\bfather'?s?\s+name\b",
-        "ತಂದೆ ಅಥವಾ ಪೋಷಕರ ಪೂರ್ಣ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.",
+        r"(?i)\bfather'?s?\s+name\b|\bfather\s+name\b|\bname\s+of\s+(?:the\s+)?father\b|\bpaternal\s+name\b",
+        "ನಿಮ್ಮ ತಂದೆಯ ಪೂರ್ಣ ಹೆಸರನ್ನು ನಮೂದಿಸಿ, ನಿಮ್ಮ ಹೆಸರಲ್ಲ.",
+    ),
+    (
+        r"(?i)\bmother'?s?\s+name\b|\bmother\s+name\b|\bname\s+of\s+(?:the\s+)?mother\b|\bmaternal\s+name\b",
+        "ನಿಮ್ಮ ತಾಯಿಯ ಪೂರ್ಣ ಹೆಸರನ್ನು ನಮೂದಿಸಿ, ನಿಮ್ಮ ಹೆಸರಲ್ಲ.",
+    ),
+    (
+        r"(?i)\b(?:guardian|spouse)'?s?\s+name\b|\bname\s+of\s+(?:the\s+)?guardian\b",
+        "ಪೋಷಕ ಅಥವಾ ಜೀವನ ಸಂಗಿಯ ಪೂರ್ಣ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.",
     ),
     (
         r"(?i)\bpassword\b",
@@ -82,7 +90,7 @@ KEYWORD_FALLBACKS_KN = [
         "ಸಂಪೂರ್ಣ ವಿಳಾಸ ಮತ್ತು ಪಿನ್ ಕೋಡ್ ನಮೂದಿಸಿ.",
     ),
     (
-        r"(?i)\b(?:full|first|last|given|family|applicant)\s+name\b|\bname\b",
+        r"(?i)\b(?:full|first|last|given|family|applicant)\s+name\b|\bsurname\b|\bname\b",
         "ಪೂರ್ಣ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.",
     ),
 ]

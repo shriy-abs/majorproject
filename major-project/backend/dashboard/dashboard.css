@@ -69,6 +69,14 @@ h1 { margin: 0; font-size: 1.35rem; }
 .btn:hover { border-color: var(--accent); }
 .btn--ghost { background: transparent; }
 
+.empty-hint {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 12px 28px 0;
+  color: var(--warn);
+  font-size: 0.9rem;
+}
+
 .grid {
   max-width: 1200px;
   margin: 0 auto;

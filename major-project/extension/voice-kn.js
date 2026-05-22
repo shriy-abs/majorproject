@@ -103,6 +103,14 @@
       "Enter the value this field is asking for.",
       "ಈ ಫೀಲ್ಡ್ ಕೇಳುವ ಮಾಹಿತಿಯನ್ನು ನಮೂದಿಸಿ.",
     ],
+    [
+      "Enter your father's full name as on official records.",
+      "ನಿಮ್ಮ ತಂದೆಯ ಪೂರ್ಣ ಹೆಸರನ್ನು ನಮೂದಿಸಿ, ನಿಮ್ಮ ಹೆಸರಲ್ಲ.",
+    ],
+    [
+      "Enter your mother's full name as on official records.",
+      "ನಿಮ್ಮ ತಾಯಿಯ ಪೂರ್ಣ ಹೆಸರನ್ನು ನಮೂದಿಸಿ, ನಿಮ್ಮ ಹೆಸರಲ್ಲ.",
+    ],
   ];
 
   const FIELD_KIND_KN = {

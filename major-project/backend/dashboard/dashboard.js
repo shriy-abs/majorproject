@@ -245,13 +245,37 @@ async function fetchMetrics() {
   return data.metrics;
 }
 
+function showEmptyHint(m) {
+  const total =
+    (m.fieldsExplained || 0) +
+    (m.voiceAssistsTriggered || 0) +
+    (m.validationErrorsPrevented || 0) +
+    (m.pagesSummarized || 0);
+  const hint = document.getElementById("emptyHint");
+  if (!hint) return;
+  if (total === 0 && !m.lastUpdated) {
+    hint.hidden = false;
+    hint.textContent =
+      "No metrics yet. Reload the extension, start the backend, use form help on a page, then click Refresh.";
+  } else if (total === 0) {
+    hint.hidden = false;
+    hint.textContent = "Counters are zero — use the ? button on a form field, then Refresh.";
+  } else {
+    hint.hidden = true;
+  }
+}
+
 async function loadDashboard() {
   try {
     const m = await fetchMetrics();
     renderAll(m);
-    setConnectionStatus(true, "Connected");
+    showEmptyHint(m);
+    const updated = m.lastUpdated
+      ? `Updated ${new Date(m.lastUpdated * 1000).toLocaleTimeString()}`
+      : "Connected — waiting for extension sync";
+    setConnectionStatus(true, updated);
   } catch (_) {
-    setConnectionStatus(false, "Backend offline");
+    setConnectionStatus(false, "Backend offline — run python app.py");
   }
 }
 

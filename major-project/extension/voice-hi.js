@@ -104,6 +104,14 @@
       "Enter the value this field is asking for.",
       "इस फ़ील्ड में जो माँगा गया है वह भरें।",
     ],
+    [
+      "Enter your father's full name as on official records.",
+      "अपने पिता का पूरा नाम लिखें, अपना नाम नहीं।",
+    ],
+    [
+      "Enter your mother's full name as on official records.",
+      "अपनी माता का पूरा नाम लिखें, अपना नाम नहीं।",
+    ],
   ];
 
   const FIELD_KIND_HI = {

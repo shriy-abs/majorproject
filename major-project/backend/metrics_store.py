@@ -78,9 +78,16 @@ def merge_metrics(payload: Dict[str, Any]) -> Dict[str, Any]:
 
         new_events = payload.get("events")
         if isinstance(new_events, list):
-            for ev in new_events[-50:]:
-                if isinstance(ev, dict) and ev.get("type"):
-                    _append_event(str(ev["type"]), str(ev.get("detail", "")))
+            cleaned = [
+                {
+                    "t": float(ev.get("t", _now())),
+                    "type": str(ev.get("type", "")),
+                    "detail": str(ev.get("detail", ""))[:120],
+                }
+                for ev in new_events
+                if isinstance(ev, dict) and ev.get("type")
+            ]
+            _metrics["events"] = cleaned[-300:]
 
         _metrics["lastUpdated"] = _now()
         return deepcopy(_metrics)
