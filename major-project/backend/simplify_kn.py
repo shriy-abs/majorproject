@@ -7,6 +7,23 @@ import re
 
 PHRASE_HINTS_KN = [
     (
+        r"(?i)\bupload\s+(?:government\s+)?(?:id|identity)\s*proof\b|"
+        r"\bupload\s+(?:government\s+)?id\s*proof\s*\([^)]*(?:aadhaar|voter|passport)",
+        "ಸರ್ಕಾರಿ ಐಡಿಯ ಸ್ಪಷ್ಟ ಫೋಟೋ ಅಥವಾ PDF ಅಪ್ಲೋಡ್ ಮಾಡಿ (ಆಧಾರ್, ವೋಟರ್ ಐಡಿ ಅಥವಾ ಪಾಸ್ಪೋರ್ಟ್). "
+        "JPG, PNG ಅಥವಾ PDF ಆಯ್ಕೆಮಾಡಿ. ಇಲ್ಲಿ ಪಠ್ಯ ಬರೆಯಬೇಡಿ.",
+    ),
+    (
+        r"(?i)\bupload\s+address\s*proof\b|"
+        r"\bupload\s+address\s*proof\s*\([^)]*(?:utility|rent|bill|agreement)",
+        "ವಿಳಾಸದ ಪುರಾವಿನ ಫೋಟೋ ಅಥವಾ PDF ಅಪ್ಲೋಡ್ ಮಾಡಿ (ವಿದ್ಯುತ್ ಬಿಲ್, ಬಾಡಿಗೆ ಒಪ್ಪಂದ). "
+        "ಇಲ್ಲಿ ಪಠ್ಯ ಬರೆಯಬೇಡಿ.",
+    ),
+    (
+        r"(?i)\bupload\b.*\b(?:proof|document|certificate|photo|scan)\b|"
+        r"\battach\s+(?:file|document)\b|\bchoose\s+file\b",
+        "ಫೈಲ್ ಅಪ್ಲೋಡ್ ಬಟನ್ ಮೂಲಕ ದಾಖಲೆ (ಚಿತ್ರ ಅಥವಾ PDF) ಲಗತ್ತಿಸಿ. ಪಠ್ಯ ನಮೂದಿಸಬೇಡಿ.",
+    ),
+    (
         r"(?i)\b(permanent\s+residential\s+address|permanent\s+address)\b",
         "ಅಧಿಕೃತ ದಾಖಲೆಗಳಲ್ಲಿರುವಂತೆ ನಿಮ್ಮ ಸಂಪೂರ್ಣ ಮನೆಯ ವಿಳಾಸವನ್ನು ನಮೂದಿಸಿ. ಉದಾಹರಣೆ: ಮನೆ ಸಂಖ್ಯೆ, ಬೀದಿ, ನಗರ, ಪಿನ್ ಕೋಡ್.",
     ),
@@ -23,7 +40,7 @@ PHRASE_HINTS_KN = [
         "ಕುಟುಂಬದ ವಾರ್ಷಿಕ ಆದಾಯವನ್ನು ತೆರಿಗೆಗೆ ಮೊದಲು ಸಂಖ್ಯೆಯಲ್ಲಿ ನಮೂದಿಸಿ. ಉದಾಹರಣೆ: 450000.",
     ),
     (
-        r"(?i)\baadhaar\b",
+        r"(?i)\baadhaar\s*(?:number|no\.?|#)?\b|\b12[- ]?digit\s+aadhaar\b",
         "ಖಾಲಿ ಜಾಗವಿಲ್ಲದೆ 12 ಅಂಕಿಯ ಆಧಾರ್ ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ. ಉದಾಹರಣೆ: 123456789012.",
     ),
     (
@@ -33,10 +50,6 @@ PHRASE_HINTS_KN = [
     (
         r"(?i)\bphone|mobile|contact\s+number\b",
         "ನಿಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸಲು ಸಾಧ್ಯವಾದ ಫೋನ್ ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ. ಉದಾಹರಣೆ: +91 9876543210.",
-    ),
-    (
-        r"(?i)\bid\s+proof|upload\s+id\b",
-        "ಸರ್ಕಾರಿ ಐಡಿಯ ಸ್ಪಷ್ಟ ಫೋಟೋ ಅಥವಾ ಸ್ಕ್ಯಾನ್ ಅಪ್ಲೋಡ್ ಮಾಡಿ.",
     ),
     (
         r"(?i)\bapplication\s+category\b|\bcategory\b",
@@ -86,8 +99,12 @@ KEYWORD_FALLBACKS_KN = [
         "ವಾರ್ಷಿಕ ಆದಾಯವನ್ನು ಸಂಖ್ಯೆಯಲ್ಲಿ ನಮೂದಿಸಿ.",
     ),
     (
-        r"(?i)\b(?:street|locality|pin\s*code|postal|zip|address)\b",
+        r"(?i)\b(?:street|locality|pin\s*code|postal|zip|address)\b(?!.*\bproof\b)",
         "ಸಂಪೂರ್ಣ ವಿಳಾಸ ಮತ್ತು ಪಿನ್ ಕೋಡ್ ನಮೂದಿಸಿ.",
+    ),
+    (
+        r"(?i)\bupload\b|\battach\b|\bchoose\s+file\b",
+        "ಫೋಟೋ ಅಥವಾ PDF ಫೈಲ್ ಅಪ್ಲೋಡ್ ಮಾಡಿ. ಇಲ್ಲಿ ಪಠ್ಯ ಬರೆಯಬೇಡಿ.",
     ),
     (
         r"(?i)\b(?:full|first|last|given|family|applicant)\s+name\b|\bsurname\b|\bname\b",

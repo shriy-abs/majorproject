@@ -10,7 +10,27 @@ from typing import Optional, Tuple
 import requests
 
 # Friendly rewrites for common Indian / government-style form wording
+# Upload hints must come before aadhaar/address keywords that appear in the same label.
 PHRASE_HINTS = [
+    (
+        r"(?i)\bupload\s+(?:government\s+)?(?:id|identity)\s*proof\b|"
+        r"\b(?:government\s+)?id\s*proof\s+upload\b|"
+        r"\bupload\s+(?:government\s+)?id\s*proof\s*\([^)]*(?:aadhaar|voter|passport)",
+        "Choose a file to upload: a clear photo or PDF of your government ID "
+        "(Aadhaar, Voter ID, or Passport). Accepted: JPG, PNG, or PDF. Do not type text here.",
+    ),
+    (
+        r"(?i)\bupload\s+address\s*proof\b|\baddress\s*proof\s+upload\b|"
+        r"\bupload\s+address\s*proof\s*\([^)]*(?:utility|rent|bill|agreement)",
+        "Choose a file to upload: a photo or PDF of your address proof "
+        "(utility bill, rent agreement, etc.). Accepted: JPG, PNG, or PDF. Do not type text here.",
+    ),
+    (
+        r"(?i)\bupload\b.*\b(?:proof|document|certificate|photo|scan|copy|attachment)\b|"
+        r"\b(?:proof|document|certificate)\b.*\bupload\b|"
+        r"\battach\s+(?:file|document|proof)\b|\bchoose\s+file\b",
+        "Use the file upload button to attach a document (image or PDF). Do not enter text in this field.",
+    ),
     (
         r"(?i)\b(permanent\s+residential\s+address|permanent\s+address)\b",
         "Enter your home address exactly as on official documents. "
@@ -41,7 +61,7 @@ PHRASE_HINTS = [
         "Enter your household's total yearly income before tax, in numbers. Example: 450000.",
     ),
     (
-        r"(?i)\baadhaar\b",
+        r"(?i)\baadhaar\s*(?:number|no\.?|#)?\b|\b12[- ]?digit\s+aadhaar\b",
         "Enter your 12-digit Aadhaar with no spaces. Example: 123456789012.",
     ),
     (
@@ -51,10 +71,6 @@ PHRASE_HINTS = [
     (
         r"(?i)\bphone|mobile|contact\s+number\b",
         "Enter a phone number you can be reached on. Example: +91 98765 43210.",
-    ),
-    (
-        r"(?i)\bid\s+proof|upload\s+id\b",
-        "Upload a clear scan or photo of a government ID. Example: Aadhaar PDF or JPEG.",
     ),
     (
         r"(?i)\bapplication\s+category\b|\bcategory\b",
@@ -90,8 +106,12 @@ KEYWORD_FALLBACKS = [
     ),
     (
         r"(?i)\b(?:street|locality|pin\s*code|postal|zip|mailing|correspondence|residential|residence|permanent)\b|"
-        r"\b(?:current|living)\s+address\b|\bliving\s+area\b|\baddress(?:\s*line)?\b",
+        r"\b(?:current|living)\s+address\b|\bliving\s+area\b|\baddress(?:\s*line)?\b(?!.*\bproof\b)",
         "Enter your complete home address. Example: House No, Street, City, PIN code.",
+    ),
+    (
+        r"(?i)\bupload\b|\battach\b|\bchoose\s+file\b",
+        "Choose a file (photo or PDF) to upload. Do not type text in this field.",
     ),
     (
         r"(?i)\b(?:full|first|last|given|family|applicant)\s+name\b|\bsurname\b|\bgiven\s+name\b|\bfamily\s+name\b|\bname\b",
@@ -203,7 +223,8 @@ def simplify_openai(text: str, lang: str = "en") -> Optional[str]:
         system = (
             "आप भारतीय सरकारी और वेब फॉर्म के लेबल को सरल, प्राकृतिक हिंदी में समझाते हैं। "
             "अंग्रेज़ी लेबल का पूरा अर्थ हिंदी में दें, केवल लिप्यंतरण न करें। "
-            "Father's name = पिता का नाम (not applicant's own name). Mother's name = माता का नाम."
+            "Father's name = पिता का नाम (not applicant's own name). Mother's name = माता का नाम. "
+            "Upload fields = फ़ाइल/फोटो/PDF अपलोड करें, टेक्स्ट नहीं।"
         )
     elif lang == "kn":
         prompt = (
@@ -217,7 +238,8 @@ def simplify_openai(text: str, lang: str = "en") -> Optional[str]:
         system = (
             "ನೀವು ಭಾರತೀಯ ಸರ್ಕಾರಿ ಮತ್ತು ವೆಬ್ ಫಾರ್ಮ್ ಲೇಬಲ್ಗಳನ್ನು ಸರಳ, ನೈಸರ್ಗಿಕ ಕನ್ನಡದಲ್ಲಿ ವಿವರಿಸುತ್ತೀರಿ. "
             "ಇಂಗ್ಲಿಷ್ ಲೇಬಲ್ನ ಸಂಪೂರ್ಣ ಅರ್ಥವನ್ನು ಕನ್ನಡದಲ್ಲಿ ನೀಡಿ, ಕೇವಲ ಲಿಪ್ಯಂತರಣ ಮಾಡಬೇಡಿ. "
-            "Father's name = ತಂದೆಯ ಹೆಸರು (not your own name). Mother's name = ತಾಯಿಯ ಹೆಸರು."
+            "Father's name = ತಂದೆಯ ಹೆಸರು (not your own name). Mother's name = ತಾಯಿಯ ಹೆಸರು. "
+            "Upload fields = ಫೋಟೋ/PDF ಅಪ್ಲೋಡ್ ಮಾಡಿ, ಪಠ್ಯ ಅಲ್ಲ."
         )
     else:
         prompt = (
@@ -231,7 +253,8 @@ def simplify_openai(text: str, lang: str = "en") -> Optional[str]:
         )
         system = (
             "You explain government and web forms in plain language. "
-            "Keep answers short and friendly."
+            "Keep answers short and friendly. "
+            "If the field is a file upload, tell the user to upload a photo or PDF — never ask them to type text."
         )
 
     try:

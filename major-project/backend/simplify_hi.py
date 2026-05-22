@@ -8,6 +8,23 @@ from typing import Optional
 
 PHRASE_HINTS_HI = [
     (
+        r"(?i)\bupload\s+(?:government\s+)?(?:id|identity)\s*proof\b|"
+        r"\bupload\s+(?:government\s+)?id\s*proof\s*\([^)]*(?:aadhaar|voter|passport)",
+        "सरकारी आईडी की साफ़ फोटो या PDF अपलोड करें (आधार, वोटर आईडी या पासपोर्ट)। "
+        "JPG, PNG या PDF चुनें। यहाँ टेक्स्ट न लिखें।",
+    ),
+    (
+        r"(?i)\bupload\s+address\s*proof\b|"
+        r"\bupload\s+address\s*proof\s*\([^)]*(?:utility|rent|bill|agreement)",
+        "पते का प्रमाण (बिजली बिल, किराया अनुबंध आदि) की फोटो या PDF अपलोड करें। "
+        "यहाँ टेक्स्ट न लिखें।",
+    ),
+    (
+        r"(?i)\bupload\b.*\b(?:proof|document|certificate|photo|scan)\b|"
+        r"\battach\s+(?:file|document)\b|\bchoose\s+file\b",
+        "फ़ाइल अपलोड बटन से दस्तावेज़ (फोटो या PDF) चुनें। टेक्स्ट न भरें।",
+    ),
+    (
         r"(?i)\b(permanent\s+residential\s+address|permanent\s+address)\b",
         "अपना पूरा घर का पता आधिकारिक दस्तावेज़ जैसा लिखें। उदाहरण: मकान नंबर, गली, शहर, पिन कोड।",
     ),
@@ -24,7 +41,7 @@ PHRASE_HINTS_HI = [
         "परिवार की सालाना आय, टैक्स से पहले, अंकों में लिखें। उदाहरण: 450000।",
     ),
     (
-        r"(?i)\baadhaar\b",
+        r"(?i)\baadhaar\s*(?:number|no\.?|#)?\b|\b12[- ]?digit\s+aadhaar\b",
         "12 अंकों का आधार नंबर बिना रिक्त स्थान के लिखें। उदाहरण: 123456789012।",
     ),
     (
@@ -34,10 +51,6 @@ PHRASE_HINTS_HI = [
     (
         r"(?i)\bphone|mobile|contact\s+number\b",
         "वह मोबाइल नंबर लिखें जहाँ आप संपर्क हो सकें। उदाहरण: +91 9876543210।",
-    ),
-    (
-        r"(?i)\bid\s+proof|upload\s+id\b",
-        "सरकारी आईडी की साफ़ फोटो या स्कैन अपलोड करें।",
     ),
     (
         r"(?i)\bapplication\s+category\b|\bcategory\b",
@@ -88,7 +101,7 @@ KEYWORD_FALLBACKS_HI = [
     ),
     (
         r"(?i)\b(?:street|locality|pin\s*code|postal|zip|mailing|correspondence|residential|residence|permanent)\b|"
-        r"\b(?:current|living)\s+address\b|\bliving\s+area\b|\baddress(?:\s*line)?\b",
+        r"\b(?:current|living)\s+address\b|\bliving\s+area\b|\baddress(?:\s*line)?\b(?!.*\bproof\b)",
         "पूरा घर का पता और पिन कोड लिखें। उदाहरण: मकान नंबर, गली, शहर, पिन कोड।",
     ),
     (

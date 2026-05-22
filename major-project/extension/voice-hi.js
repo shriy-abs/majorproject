@@ -49,8 +49,16 @@
       "वह मोबाइल नंबर लिखें जहाँ आप संपर्क हो सकें। उदाहरण: +91 9876543210।",
     ],
     [
-      "Upload a clear scan or photo of a government ID. Example: Aadhaar PDF or JPEG.",
-      "सरकारी आईडी की साफ़ फोटो या स्कैन अपलोड करें। उदाहरण: आधार पीडीएफ या जेपीईजी।",
+      "Choose a file to upload: a clear photo or PDF of your government ID (Aadhaar, Voter ID, or Passport). Accepted: JPG, PNG, or PDF. Do not type text here.",
+      "सरकारी आईडी की साफ़ फोटो या PDF अपलोड करें (आधार, वोटर आईडी या पासपोर्ट)। JPG, PNG या PDF चुनें। यहाँ टेक्स्ट न लिखें।",
+    ],
+    [
+      "Choose a file to upload: a photo or PDF of your address proof (utility bill, rent agreement, etc.). Accepted: JPG, PNG, or PDF. Do not type text here.",
+      "पते का प्रमाण (बिजली बिल, किराया अनुबंध आदि) की फोटो या PDF अपलोड करें। यहाँ टेक्स्ट न लिखें।",
+    ],
+    [
+      "Use the file upload button to attach a document (image or PDF). Do not enter text in this field.",
+      "फ़ाइल अपलोड बटन से दस्तावेज़ (फोटो या PDF) चुनें। टेक्स्ट न भरें।",
     ],
     [
       "Choose the category that matches you best. Example: Student.",

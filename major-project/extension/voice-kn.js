@@ -48,8 +48,16 @@
       "ನಿಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸಲು ಸಾಧ್ಯವಾದ ಫೋನ್ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ. ಉದಾಹರಣೆ: +91 9876543210.",
     ],
     [
-      "Upload a clear scan or photo of a government ID. Example: Aadhaar PDF or JPEG.",
-      "ಸರ್ಕಾರಿ ಐಡಿಯ ಸ್ಪಷ್ಟ ಫೋಟೋ ಅಥವಾ ಸ್ಕ್ಯಾನ್ ಅಪ್ಲೋಡ್ ಮಾಡಿ.",
+      "Choose a file to upload: a clear photo or PDF of your government ID (Aadhaar, Voter ID, or Passport). Accepted: JPG, PNG, or PDF. Do not type text here.",
+      "ಸರ್ಕಾರಿ ಐಡಿಯ ಸ್ಪಷ್ಟ ಫೋಟೋ ಅಥವಾ PDF ಅಪ್ಲೋಡ್ ಮಾಡಿ (ಆಧಾರ್, ವೋಟರ್ ಐಡಿ ಅಥವಾ ಪಾಸ್ಪೋರ್ಟ್). ಇಲ್ಲಿ ಪಠ್ಯ ಬರೆಯಬೇಡಿ.",
+    ],
+    [
+      "Choose a file to upload: a photo or PDF of your address proof (utility bill, rent agreement, etc.). Accepted: JPG, PNG, or PDF. Do not type text here.",
+      "ವಿಳಾಸದ ಪುರಾವಿನ ಫೋಟೋ ಅಥವಾ PDF ಅಪ್ಲೋಡ್ ಮಾಡಿ. ಇಲ್ಲಿ ಪಠ್ಯ ಬರೆಯಬೇಡಿ.",
+    ],
+    [
+      "Use the file upload button to attach a document (image or PDF). Do not enter text in this field.",
+      "ಫೈಲ್ ಅಪ್ಲೋಡ್ ಬಟನ್ ಮೂಲಕ ದಾಖಲೆ ಲಗತ್ತಿಸಿ. ಪಠ್ಯ ನಮೂದಿಸಬೇಡಿ.",
     ],
     [
       "Choose the category that matches you best. Example: Student.",

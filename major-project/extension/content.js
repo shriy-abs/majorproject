@@ -6,7 +6,7 @@
   const ATTR = "data-cfaAttached";
   const DEFAULT_BACKEND = "http://127.0.0.1:5000";
   const FIELD_SELECTOR =
-    'form input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]):not([type="search"]), form textarea, form select';
+    'form input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]):not([type="search"]), form input[type="file"], form textarea, form select';
 
   /** Common mistyped email domains → correction */
   const EMAIL_DOMAIN_TYPOS = {
@@ -277,6 +277,7 @@
     const type = (el.getAttribute("type") || "").toLowerCase();
     const blob = `${type} ${contextText} ${el.name || ""} ${el.id || ""} ${el.autocomplete || ""}`.toLowerCase();
 
+    if (type === "file" || /\bupload\b|\battach\b|\bchoose\s+file\b/.test(blob)) return "file";
     if (type === "email" || /\be[-]?mail\b/.test(blob)) return "email";
     if (type === "tel" || /\b(phone|mobile|cell|contact\s*number|tel)\b/.test(blob)) return "phone";
     if (type === "password" || /\b(password|passphrase|passcode)\b/.test(blob)) return "password";
@@ -351,6 +352,9 @@
 
   /** Fast, synchronous checks for input/blur (no network). */
   function runFieldValidation(fieldEl, contextText) {
+    if ((fieldEl.getAttribute("type") || "").toLowerCase() === "file") {
+      return { messages: [], typo: null, kind: "file" };
+    }
     const value = fieldEl.value != null ? String(fieldEl.value) : "";
     const trimmed = value.trim();
     const kind = detectFieldKind(fieldEl, contextText);
@@ -369,7 +373,25 @@
     return { messages, typo, kind };
   }
 
-  function localFallback(raw) {
+  function localFallback(raw, fieldEl, contextText) {
+    const blob = `${raw} ${contextText || ""} ${fieldEl?.id || ""} ${fieldEl?.name || ""}`.toLowerCase();
+    if (
+      fieldEl?.type === "file" ||
+      (/\bupload\b/.test(blob) && /\b(?:proof|document|file|photo|scan)\b/.test(blob))
+    ) {
+      if (/\baddress\s*proof\b/.test(blob)) {
+        return voiceLanguage === "HI"
+          ? "पते का प्रमाण (बिल/किराया अनुबंध) की फोटो या PDF अपलोड करें।"
+          : voiceLanguage === "KN"
+            ? "ವಿಳಾಸದ ಪುರಾವಿನ ಫೋಟೋ ಅಥವಾ PDF ಅಪ್ಲೋಡ್ ಮಾಡಿ."
+            : "Upload a photo or PDF of your address proof (utility bill or rent agreement).";
+      }
+      return voiceLanguage === "HI"
+        ? "सरकारी आईडी या दस्तावेज़ की फोटो/PDF अपलोड करें। टेक्स्ट न लिखें।"
+        : voiceLanguage === "KN"
+          ? "ದಾಖಲೆ ಅಥವಾ ಫೋಟೋ/PDF ಅಪ್ಲೋಡ್ ಮಾಡಿ. ಪಠ್ಯ ಬರೆಯಬೇಡಿ."
+          : "Upload a photo or PDF file here. Do not type text.";
+    }
     const t = (raw || "").trim();
     const en = !t
       ? "Enter the value this field is asking for."
@@ -408,7 +430,7 @@
     return null;
   }
 
-  async function fetchSimplified(text) {
+  async function fetchSimplified(text, fieldEl, contextText) {
     const t0 = performance.now();
     const lang = langToApiCode(voiceLanguage);
 
@@ -424,7 +446,7 @@
     }
 
     const backendError = res.error || (data && data.error) || null;
-    const fallback = localFallback(text);
+    const fallback = localFallback(text, fieldEl, contextText);
     if (voiceLanguage !== "EN") {
       const translated = await fetchTranslated(fallback);
       if (translated) {
@@ -468,6 +490,93 @@
     return /[\u0900-\u097F\u0C80-\u0CFF]/.test(text || "");
   }
 
+  function detectIdFieldKind(fieldEl, contextText) {
+    const blob = `${contextText || ""} ${fieldEl?.id || ""} ${fieldEl?.name || ""} ${fieldEl?.getAttribute?.("autocomplete") || ""}`.toLowerCase();
+    if (/\baadhaar\b|\buid\b|\buidai\b|आधार|ಆಧಾರ್/.test(blob)) return "aadhaar";
+    if (/\bpan\b|\bpermanent\s+account\b|पैन|ಪ್ಯಾನ್/.test(blob)) return "pan";
+    return null;
+  }
+
+  /** Speak each digit/letter separately so TTS does not read 12-digit Aadhaar as one number. */
+  function spellChars(value) {
+    return String(value)
+      .replace(/\s/g, "")
+      .split("")
+      .join(", ");
+  }
+
+  const HI_DIGIT_WORDS = ["शून्य", "एक", "दो", "तीन", "चार", "पाँच", "छह", "सात", "आठ", "नौ"];
+  const KN_DIGIT_WORDS = ["ಸೊನ್ನೆ", "ಒಂದು", "ಎರಡು", "ಮೂರು", "ನಾಲ್ಕು", "ಐದು", "ಆರು", "ಏಳು", "ಎಂಟು", "ಒಂಬತ್ತು"];
+
+  function spellDigitChar(ch) {
+    if (/\d/.test(ch)) {
+      const d = parseInt(ch, 10);
+      if (voiceLanguage === "HI") return HI_DIGIT_WORDS[d] || ch;
+      if (voiceLanguage === "KN") return KN_DIGIT_WORDS[d] || ch;
+      return ch;
+    }
+    if (voiceLanguage === "HI" && /[A-Za-z]/.test(ch)) {
+      return ch.toUpperCase();
+    }
+    if (voiceLanguage === "KN" && /[A-Za-z]/.test(ch)) {
+      return ch.toUpperCase();
+    }
+    return ch;
+  }
+
+  function spellIdValue(value, kind) {
+    const raw = String(value).replace(/\s/g, "");
+    if (kind === "aadhaar" && /^\d{12}$/.test(raw)) {
+      if (voiceLanguage === "EN") return spellChars(raw);
+      return raw
+        .split("")
+        .map((ch) => spellDigitChar(ch))
+        .join(", ");
+    }
+    if (kind === "pan" && /^[A-Za-z]{5}\d{4}[A-Za-z]$/.test(raw)) {
+      if (voiceLanguage === "EN") return spellChars(raw.toUpperCase());
+      return raw
+        .toUpperCase()
+        .split("")
+        .map((ch) => spellDigitChar(ch))
+        .join(", ");
+    }
+    return null;
+  }
+
+  /** Expand Aadhaar (12 digits) and PAN (10 chars) in spoken text for clearer TTS. */
+  function spellIdsForTts(text, contextText, fieldEl) {
+    let out = text || "";
+    const kind = detectIdFieldKind(fieldEl, contextText);
+    const mentionAadhaar = kind === "aadhaar" || /\baadhaar\b|\b12[- ]?digit\b|आधार|ಆಧಾರ್/i.test(out);
+    const mentionPan = kind === "pan" || /\bpan\b|\b10[- ]?character\b|पैन|ಪ್ಯಾನ್/i.test(out);
+
+    if (mentionAadhaar) {
+      out = out.replace(/\b(\d{4}[\s-]?\d{4}[\s-]?\d{4})\b/g, (match) => {
+        const digits = match.replace(/\D/g, "");
+        if (digits.length !== 12) return match;
+        return spellIdValue(digits, "aadhaar") || spellChars(digits);
+      });
+      out = out.replace(/\b(\d{12})\b/g, (match) => spellIdValue(match, "aadhaar") || spellChars(match));
+    }
+
+    if (mentionPan) {
+      out = out.replace(/\b([A-Za-z]{5}\d{4}[A-Za-z])\b/g, (match) => {
+        return spellIdValue(match, "pan") || spellChars(match.toUpperCase());
+      });
+    }
+
+    if (fieldEl && kind) {
+      const val = (fieldEl.value || "").trim();
+      const spelled = spellIdValue(val, kind);
+      if (spelled && val && out.includes(val.replace(/\s/g, ""))) {
+        out = out.replace(val.replace(/\s/g, ""), spelled);
+      }
+    }
+
+    return out;
+  }
+
   /** Strip punctuation that English TTS reads as isolated "dot" sounds. */
   function prepareTextForTts(text) {
     return (text || "")
@@ -487,7 +596,7 @@
     return translateForVoice(first) !== first ? translateForVoice(first) : first;
   }
 
-  function speakMultilingual(text, contextText) {
+  function speakMultilingual(text, contextText, fieldEl) {
     const line = (text || "").trim();
     if (!line) return;
 
@@ -498,6 +607,7 @@
         let langCode = ttsLangCode();
         let voice = pickVoiceForLang(langCode);
         let spoken = line;
+        let slowRate = false;
 
         // Kannada/Hindi script with no native voice: English TTS only reads dots — use label context.
         if (voiceLanguage !== "EN" && hasIndicScript(line) && !voice) {
@@ -521,11 +631,15 @@
           spoken = prepareTextForTts(line);
         }
 
+        const beforeSpell = spoken;
+        spoken = spellIdsForTts(spoken, contextText, fieldEl);
+        if (spoken !== beforeSpell) slowRate = true;
+
         if (!spoken) return;
 
         const u = new SpeechSynthesisUtterance(spoken);
         u.lang = langCode;
-        u.rate = 0.9;
+        u.rate = slowRate ? 0.82 : 0.9;
         if (voice) u.voice = voice;
         window.speechSynthesis.speak(u);
       } catch (_) {
@@ -633,6 +747,31 @@
       if (voiceLanguage === "HI") return "अपनी माता का पूरा नाम लिखें।";
       if (voiceLanguage === "KN") return "ನಿಮ್ಮ ತಾಯಿಯ ಪೂರ್ಣ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.";
       return "Enter your mother's full name.";
+    }
+    if (/\baadhaar\b|\buid\b|आधार|ಆಧಾರ್/.test(blob)) {
+      if (voiceLanguage === "HI") return "बारह अंकों का आधार नंबर, एक एक करके भरें।";
+      if (voiceLanguage === "KN") return "ಹನ್ನೆರಡು ಅಂಕಿಯ ಆಧಾರ್ ಸಂಖ್ಯೆಯನ್ನು ಒಂದೊಂದಾಗಿ ನಮೂದಿಸಿ.";
+      return "Enter your twelve-digit Aadhaar number, one digit at a time.";
+    }
+    if (/\bpan\b|\bpermanent\s+account|पैन|ಪ್ಯಾನ್/.test(blob)) {
+      if (voiceLanguage === "HI") return "दस अक्षर का पैन, एक एक करके भरें।";
+      if (voiceLanguage === "KN") return "ಹತ್ತು ಅಕ್ಷರದ ಪ್ಯಾನ್, ಒಂದೊಂದಾಗಿ ನಮೂದಿಸಿ.";
+      return "Enter your ten-character PAN, one character at a time.";
+    }
+    if (/\bupload\b/.test(blob) && /\baddress\s*proof\b/.test(blob)) {
+      if (voiceLanguage === "HI") return "पते का प्रमाण की फोटो या PDF अपलोड करें।";
+      if (voiceLanguage === "KN") return "ವಿಳಾಸದ ಪುರಾವಿನ ಫೋಟೋ ಅಥವಾ PDF ಅಪ್ಲೋಡ್ ಮಾಡಿ.";
+      return "Upload a photo or PDF of your address proof.";
+    }
+    if (/\bupload\b/.test(blob) && /\b(?:proof|document|id)\b/.test(blob)) {
+      if (voiceLanguage === "HI") return "सरकारी आईडी की फोटो या PDF अपलोड करें।";
+      if (voiceLanguage === "KN") return "ಸರ್ಕಾರಿ ಐಡಿಯ ಫೋಟೋ ಅಥವಾ PDF ಅಪ್ಲೋಡ್ ಮಾಡಿ.";
+      return "Upload a photo or PDF of your government ID.";
+    }
+    if (/\bupload\b|\bchoose\s+file\b/.test(blob)) {
+      if (voiceLanguage === "HI") return "फ़ाइल अपलोड करें, टेक्स्ट न लिखें।";
+      if (voiceLanguage === "KN") return "ಫೈಲ್ ಅಪ್ಲೋಡ್ ಮಾಡಿ, ಪಠ್ಯ ಬರೆಯಬೇಡಿ.";
+      return "Upload a file here. Do not type text.";
     }
     return null;
   }
@@ -772,7 +911,11 @@
 
       simple.textContent = "Loading…";
       meta.textContent = "";
-      const result = await fetchSimplified(contextText || fieldEl.name || "form field");
+      const result = await fetchSimplified(
+        contextText || fieldEl.name || "form field",
+        fieldEl,
+        contextText
+      );
       if (langAtStart !== voiceLanguage) return;
 
       lastSimplified = result.text;
@@ -820,7 +963,7 @@
 
     speakBtn.addEventListener("click", () => {
       const msg = lastValidationText || lastSimplified || simple.textContent || contextText;
-      speakMultilingual(msg, contextText);
+      speakMultilingual(msg, contextText, fieldEl);
       if (window.CFAMetrics) window.CFAMetrics.bump("voiceAssistsTriggered");
     });
 
@@ -888,7 +1031,7 @@
 
     const speakLine = pickFocusVoiceMessage(api, result, ctx, el);
     if (speakLine) {
-      speakMultilingual(speakLine, ctx);
+      speakMultilingual(speakLine, ctx, el);
       if (window.CFAMetrics) window.CFAMetrics.bump("voiceAssistsTriggered");
     }
 
