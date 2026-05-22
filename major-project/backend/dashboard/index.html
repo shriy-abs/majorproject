@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cognitive Form Assist — Analytics Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">◉</span>
+      <div>
+        <h1>Analytics Dashboard</h1>
+        <p class="subtitle">Cognitive Form Assist · separate from extension</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span id="connectionStatus" class="status-pill status-pill--unknown">Connecting…</span>
+      <button type="button" id="refreshBtn" class="btn">Refresh</button>
+      <button type="button" id="resetBtn" class="btn btn--ghost">Reset stats</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="row row--cards" aria-label="Session counters">
+      <article class="card">
+        <span class="card-value" id="val-fieldsExplained">0</span>
+        <span class="card-label">Fields Explained</span>
+      </article>
+      <article class="card">
+        <span class="card-value" id="val-validationErrorsPrevented">0</span>
+        <span class="card-label">Errors Prevented</span>
+      </article>
+      <article class="card">
+        <span class="card-value" id="val-voiceAssistsTriggered">0</span>
+        <span class="card-label">Voice Assists</span>
+      </article>
+      <article class="card">
+        <span class="card-value" id="val-pagesSummarized">0</span>
+        <span class="card-label">Pages Summarized</span>
+      </article>
+      <article class="card card--meta">
+        <span class="card-value card-value--small" id="avgLatency">—</span>
+        <span class="card-label">Avg API Response</span>
+      </article>
+    </section>
+
+    <section class="row row--charts">
+      <div class="panel">
+        <h2>Field Types Processed</h2>
+        <div class="chart-box chart-box--tall">
+          <canvas id="fieldsChart" aria-label="Bar chart of field types"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Session Activity Mix</h2>
+        <div class="chart-box">
+          <canvas id="activityChart" aria-label="Doughnut chart of activity types"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section class="row row--charts">
+      <div class="panel">
+        <h2>Language Usage</h2>
+        <div class="chart-box">
+          <canvas id="languageChart" aria-label="Language breakdown chart"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Simplification Source</h2>
+        <div class="chart-box">
+          <canvas id="sourceChart" aria-label="LLM vs rules breakdown"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section class="row row--wide">
+      <div class="panel panel--wide">
+        <h2>Activity Timeline</h2>
+        <p class="panel-hint">Events synced from the extension during your browsing session</p>
+        <div class="chart-box chart-box--timeline">
+          <canvas id="timelineChart" aria-label="Timeline of user events"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Open this page at <code id="dashboardUrl"></code> while the backend and extension are running.</p>
+    <p class="footer-note">Metrics sync automatically when you use form help on any page.</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>

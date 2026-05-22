@@ -29,13 +29,30 @@
   let microTooltipEl = null;
   let focusedFieldEl = null;
   let typoFlashTimer = null;
+  const translationCache = new Map();
+
+  const VALID_LANGS = new Set(["EN", "HI", "KN"]);
+
+  function normalizeLang(value) {
+    const v = (value || "EN").toUpperCase();
+    return VALID_LANGS.has(v) ? v : "EN";
+  }
+
+  function langToApiCode(lang) {
+    if (lang === "HI") return "hi";
+    if (lang === "KN") return "kn";
+    return "en";
+  }
 
   chrome.storage.local.get({ voiceLanguage: "EN" }, (items) => {
-    voiceLanguage = items.voiceLanguage === "HI" ? "HI" : "EN";
+    voiceLanguage = normalizeLang(items.voiceLanguage);
+    if (window.CFAMetrics) window.CFAMetrics.recordLanguage(voiceLanguage);
   });
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === "local" && changes.voiceLanguage) {
-      voiceLanguage = changes.voiceLanguage.newValue === "HI" ? "HI" : "EN";
+      voiceLanguage = normalizeLang(changes.voiceLanguage.newValue);
+      translationCache.clear();
+      if (window.CFAMetrics) window.CFAMetrics.recordLanguage(voiceLanguage);
     }
   });
 
@@ -295,6 +312,28 @@
     if (window.CFAMetrics) window.CFAMetrics.recordFieldType(key);
   }
 
+  async function fetchTranslated(text) {
+    const key = `${voiceLanguage}:${text}`;
+    if (translationCache.has(key)) return translationCache.get(key);
+
+    const base = await getBackendBase();
+    try {
+      const r = await fetch(`${base}/api/translate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, lang: langToApiCode(voiceLanguage) }),
+      });
+      const data = await r.json();
+      if (data && data.ok && data.translated) {
+        translationCache.set(key, data.translated);
+        return data.translated;
+      }
+    } catch (_) {
+      /* offline */
+    }
+    return null;
+  }
+
   async function fetchSimplified(text) {
     const t0 = performance.now();
     const base = await getBackendBase();
@@ -304,36 +343,67 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text,
-          lang: voiceLanguage === "HI" ? "hi" : "en",
+          lang: langToApiCode(voiceLanguage),
         }),
       });
       const data = await r.json();
       const ms = performance.now() - t0;
       if (window.CFAMetrics) window.CFAMetrics.recordLatency(ms);
       if (data && data.ok && data.simplified) {
-        return { text: data.simplified, source: data.source || "api" };
+        const source = data.source || "api";
+        if (window.CFAMetrics) window.CFAMetrics.recordSimplifySource(source);
+        return { text: data.simplified, source };
       }
     } catch (_) {
       if (window.CFAMetrics) window.CFAMetrics.recordLatency(performance.now() - t0);
     }
-    return { text: localFallback(text), source: "local" };
+    const fallback = localFallback(text);
+    if (voiceLanguage !== "EN") {
+      const translated = await fetchTranslated(fallback);
+      if (translated) {
+        if (window.CFAMetrics) window.CFAMetrics.recordSimplifySource("local");
+        return { text: translated, source: "local" };
+      }
+    }
+    if (window.CFAMetrics) window.CFAMetrics.recordSimplifySource("local");
+    return { text: fallback, source: "local" };
   }
 
   function translateForVoice(text) {
-    if (voiceLanguage !== "HI" || !text) return text;
-    if (window.CFAVoiceHI) return window.CFAVoiceHI.translate(text);
+    if (!text || voiceLanguage === "EN") return text;
+    if (voiceLanguage === "HI" && window.CFAVoiceHI) return window.CFAVoiceHI.translate(text);
+    if (voiceLanguage === "KN" && window.CFAVoiceKN) return window.CFAVoiceKN.translate(text);
     return text;
+  }
+
+  async function translateForDisplay(text) {
+    if (!text || voiceLanguage === "EN") return text;
+    const voice = translateForVoice(text);
+    if (voice !== text) return voice;
+    const api = await fetchTranslated(text);
+    return api || text;
   }
 
   function pickVoiceForLang(langCode) {
     const voices = window.speechSynthesis.getVoices();
     if (!voices.length) return null;
-    const want = langCode.startsWith("hi") ? "hi" : "en";
+    const prefix = langCode.split("-")[0].toLowerCase();
+    const matchers = {
+      hi: /hindi|hi-|india/i,
+      kn: /kannada|kn-|india/i,
+    };
+    const extra = matchers[prefix];
     return (
-      voices.find((v) => v.lang && v.lang.toLowerCase().startsWith(want) && /hindi|hi-|india/i.test(v.name + v.lang)) ||
-      voices.find((v) => v.lang && v.lang.toLowerCase().startsWith(want)) ||
+      (extra && voices.find((v) => v.lang && v.lang.toLowerCase().startsWith(prefix) && extra.test(v.name + v.lang))) ||
+      voices.find((v) => v.lang && v.lang.toLowerCase().startsWith(prefix)) ||
       null
     );
+  }
+
+  function ttsLangCode() {
+    if (voiceLanguage === "HI") return "hi-IN";
+    if (voiceLanguage === "KN") return "kn-IN";
+    return "en-US";
   }
 
   function speakMultilingual(text) {
@@ -343,12 +413,24 @@
       window.speechSynthesis.cancel();
       const spoken = translateForVoice(line);
       const u = new SpeechSynthesisUtterance(spoken);
-      const langCode = voiceLanguage === "HI" ? "hi-IN" : "en-US";
+      const langCode = ttsLangCode();
       u.lang = langCode;
       u.rate = 0.92;
       const voice = pickVoiceForLang(langCode);
       if (voice) u.voice = voice;
       window.speechSynthesis.speak(u);
+      if (voiceLanguage !== "EN" && spoken === line) {
+        fetchTranslated(line).then((translated) => {
+          if (translated && translated !== line) {
+            window.speechSynthesis.cancel();
+            const u2 = new SpeechSynthesisUtterance(translated);
+            u2.lang = langCode;
+            u2.rate = 0.92;
+            if (voice) u2.voice = voice;
+            window.speechSynthesis.speak(u2);
+          }
+        });
+      }
     } catch (_) {
       /* no TTS */
     }
@@ -382,9 +464,17 @@
       tip.hidden = true;
       return;
     }
-    tip.textContent = text.replace(/^•\s*/gm, "").split("\n")[0].slice(0, 120);
+    const line = text.replace(/^•\s*/gm, "").split("\n")[0].slice(0, 120);
+    tip.textContent = line;
     positionMicroTooltip(fieldEl);
     tip.hidden = false;
+    if (voiceLanguage !== "EN") {
+      translateForDisplay(line).then((translated) => {
+        if (translated && translated !== line && fieldEl === focusedFieldEl) {
+          tip.textContent = translated.slice(0, 120);
+        }
+      });
+    }
   }
 
   function hideMicroTooltip() {
@@ -430,10 +520,13 @@
       const custom = api.getSpeakText();
       if (custom && custom !== "Loading…") return custom.replace(/^•\s*/gm, "").split("\n")[0];
     }
-    if (voiceLanguage === "HI" && fieldEl && window.CFAVoiceHI) {
+    if (voiceLanguage !== "EN" && fieldEl) {
       const kind = detectFieldKind(fieldEl, contextText);
-      const hint = window.CFAVoiceHI.fieldKindHint(kind);
-      if (hint) return hint;
+      const voiceMod = voiceLanguage === "KN" ? window.CFAVoiceKN : window.CFAVoiceHI;
+      if (voiceMod) {
+        const hint = voiceMod.fieldKindHint(kind);
+        if (hint) return hint;
+      }
     }
     if (contextText) return contextText.split(".")[0];
     return "";
@@ -509,13 +602,25 @@
       if (open) btn.classList.toggle("cfa-help-btn--alert", validation.hidden === false);
     }
 
-    function applyValidationToPanel(result) {
+    async function applyValidationToPanel(result) {
       const text = formatValidationHtml(result.messages, result.typo);
       lastValidationText = text;
       if (text) {
         validation.textContent = text;
         validation.hidden = false;
         btn.classList.add("cfa-help-btn--alert");
+        if (voiceLanguage !== "EN") {
+          const lines = text.split("\n").filter(Boolean);
+          const translated = await Promise.all(
+            lines.map(async (line) => {
+              const plain = line.replace(/^•\s*/, "");
+              const t = await translateForDisplay(plain);
+              return `• ${t}`;
+            })
+          );
+          validation.textContent = translated.join("\n");
+          lastValidationText = validation.textContent;
+        }
       } else {
         validation.textContent = "";
         validation.hidden = true;
@@ -525,7 +630,7 @@
 
     function refreshValidation() {
       const result = runFieldValidation(fieldEl, contextText);
-      applyValidationToPanel(result);
+      void applyValidationToPanel(result);
       if (fieldEl === focusedFieldEl) applyVisualState(fieldEl, result);
       return result;
     }

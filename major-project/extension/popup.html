@@ -3,95 +3,46 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Cognitive Form Assist — Live Analytics</title>
+  <title>Cognitive Form Assist</title>
   <link rel="stylesheet" href="popup.css" />
 </head>
-<body>
+<body class="popup-simple">
   <header class="dash-header">
     <div class="dash-brand">
       <span class="dash-logo" aria-hidden="true">◉</span>
       <div>
-        <h1>Live Analytics</h1>
-        <p class="dash-subtitle">Cognitive Form Assist · Exhibition Dashboard</p>
+        <h1>Cognitive Form Assist</h1>
+        <p class="dash-subtitle">Form help on any webpage</p>
       </div>
-    </div>
-    <div class="dash-header-actions">
-      <label class="lang-select-wrap" for="voiceLanguage">
-        <span class="lang-select-label">Voice</span>
-        <select id="voiceLanguage" class="lang-select" aria-label="Voice language">
-          <option value="EN">English (EN)</option>
-          <option value="HI">Hindi (HI)</option>
-        </select>
-      </label>
-      <button type="button" id="refreshBtn" class="dash-refresh" title="Refresh metrics">↻</button>
     </div>
   </header>
 
-  <main class="dash-grid">
-    <section class="dash-row dash-row--cards" aria-label="Session counters">
-      <article class="scorecard" data-metric="fieldsExplained">
-        <span class="scorecard-icon" aria-hidden="true">?</span>
-        <span class="scorecard-value" id="val-fieldsExplained">0</span>
-        <span class="scorecard-label">Fields Explained</span>
-      </article>
-      <article class="scorecard" data-metric="validationErrorsPrevented">
-        <span class="scorecard-icon" aria-hidden="true">✓</span>
-        <span class="scorecard-value" id="val-validationErrorsPrevented">0</span>
-        <span class="scorecard-label">Errors Prevented</span>
-      </article>
-      <article class="scorecard" data-metric="voiceAssistsTriggered">
-        <span class="scorecard-icon" aria-hidden="true">♪</span>
-        <span class="scorecard-value" id="val-voiceAssistsTriggered">0</span>
-        <span class="scorecard-label">Voice Assists</span>
-      </article>
-      <article class="scorecard" data-metric="pagesSummarized">
-        <span class="scorecard-icon" aria-hidden="true">§</span>
-        <span class="scorecard-value" id="val-pagesSummarized">0</span>
-        <span class="scorecard-label">Pages Summarized</span>
-      </article>
+  <main class="popup-main">
+    <section class="popup-section">
+      <label class="lang-select-wrap" for="voiceLanguage">
+        <span class="lang-select-label">Language</span>
+        <select id="voiceLanguage" class="lang-select" aria-label="Help and voice language">
+          <option value="EN">English (EN)</option>
+          <option value="HI">Hindi (HI)</option>
+          <option value="KN">Kannada (KN)</option>
+        </select>
+      </label>
+      <p class="popup-hint">Field explanations, validation hints, and voice use the language you pick.</p>
     </section>
 
-    <section class="dash-row dash-row--chart" aria-label="Field types processed">
-      <div class="panel panel--chart">
-        <div class="panel-head">
-          <h2>Fields Processed</h2>
-          <p id="avgLatency" class="panel-meta">Avg response: —</p>
-        </div>
-        <div class="chart-wrap">
-          <canvas id="fieldsChart" aria-label="Bar chart of field types processed"></canvas>
-        </div>
-      </div>
-    </section>
-
-    <section class="dash-row dash-row--score" aria-label="Page accessibility score">
-      <div class="panel panel--access">
-        <div class="panel-head">
-          <h2>Page Accessibility Score</h2>
-          <p id="tabHint" class="panel-meta">Active tab</p>
-        </div>
-        <div class="access-layout">
-          <div class="score-ring-wrap">
-            <svg class="score-ring" viewBox="0 0 120 120" role="img" aria-labelledby="scoreTitle">
-              <circle class="score-ring-track" cx="60" cy="60" r="52" />
-              <circle class="score-ring-fill" id="scoreRingFill" cx="60" cy="60" r="52" />
-            </svg>
-            <div class="score-ring-center">
-              <span class="score-ring-value" id="accessScoreValue">—</span>
-              <span class="score-ring-tier" id="accessScoreTier">Scanning…</span>
-            </div>
-          </div>
-          <ul class="score-breakdown" id="scoreBreakdown"></ul>
-        </div>
-      </div>
+    <section class="popup-section popup-section--dashboard">
+      <h2>Analytics</h2>
+      <p class="popup-hint">Charts and session stats live in a separate dashboard (not in this popup).</p>
+      <a id="openDashboard" href="#" class="popup-dashboard-link" target="_blank" rel="noopener">
+        Open Analytics Dashboard →
+      </a>
     </section>
   </main>
 
   <footer class="dash-footer">
     <a href="options.html" target="_blank" rel="noopener">Settings</a>
-    <button type="button" id="resetMetrics" class="dash-link-btn">Reset session stats</button>
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

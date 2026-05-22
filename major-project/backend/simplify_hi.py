@@ -67,30 +67,47 @@ KEYWORD_FALLBACKS_HI = [
         "सही ईमेल पता लिखें। उदाहरण: naam@gmail.com।",
     ),
     (
-        r"(?i)\bphone\b|\bmobile\b|\bcontact\s*number\b",
+        r"(?i)\bphone\b|\bmobile\b|\bcell\b|\btelephone\b|\btel\.?\b|\bwhatsapp\b|\bcontact\s*(?:number|no\.?)\b|\bmob\.?\b",
         "अपना फ़ोन नंबर लिखें। उदाहरण: 9876543210।",
     ),
     (
-        r"(?i)\bdob\b|\bdate\s+of\s+birth\b",
-        "अपनी जन्म तिथि लिखें।",
+        r"(?i)\bdob\b|\bdate\s+of\s+birth\b|\bbirth\s*date\b|\bbirthdate\b",
+        "अपनी जन्म तिथि लिखें। उदाहरण: 15 मार्च 2000।",
     ),
     (
-        r"(?i)\bincome\b|\bsalary\b",
-        "सालाना आय अंकों में लिखें।",
+        r"(?i)\bincome\b|\bsalary\b|\bremuneration\b",
+        "सालाना आय अंकों में लिखें। उदाहरण: 500000।",
     ),
     (
-        r"(?i)\baddress\b|\bpin\b",
-        "पूरा पता और पिन कोड लिखें।",
+        r"(?i)\b(?:street|locality|pin\s*code|postal|zip|mailing|correspondence|residential|residence|permanent)\b|"
+        r"\b(?:current|living)\s+address\b|\bliving\s+area\b|\baddress(?:\s*line)?\b",
+        "पूरा घर का पता और पिन कोड लिखें। उदाहरण: मकान नंबर, गली, शहर, पिन कोड।",
     ),
     (
-        r"(?i)\bname\b",
-        "पूरा नाम लिखें।",
+        r"(?i)\b(?:full|first|last|given|family|applicant)\s+name\b|\bname\s+of\b|\bfather'?s?\s+name\b|\bmother'?s?\s+name\b|\b(?:guardian|spouse)'?s?\s+name\b|\bsurname\b|\bname\b",
+        "पूरा नाम लिखें। उदाहरण: प्रिया शर्मा।",
+    ),
+    (
+        r"(?i)\bpassword\b|\bpassphrase\b",
+        "मज़बूत पासवर्ड बनाएँ। कम से कम 8 अक्षर, एक अक्षर और एक संख्या।",
+    ),
+    (
+        r"(?i)\bupload\b|\battach\b|\bfile\b|\bdocument\b",
+        "स्पष्ट फ़ाइल या फोटो अपलोड करें।",
+    ),
+    (
+        r"(?i)\bselect\b|\bchoose\b|\bpick\b|\boption\b",
+        "सूची से सही विकल्प चुनें।",
     ),
 ]
 
 KEYWORD_SEMANTIC_HI = [
-    (("city", "town", "residence"), "वह शहर लिखें जहाँ आप रहते हैं।"),
-    (("remark", "comment", "feedback"), "अतिरिक्त जानकारी लिखें या खाली छोड़ें।"),
+    (("city", "town", "residence", "location", "place"), "वह शहर लिखें जहाँ आप रहते हैं। उदाहरण: बेंगलुरु।"),
+    (("remark", "comment", "feedback", "notes", "description"), "अतिरिक्त जानकारी लिखें या खाली छोड़ें।"),
+    (("gender", "sex"), "अपना लिंग चुनें।"),
+    (("state", "district", "taluk", "village"), "अपना राज्य/जिला/गाँव चुनें या लिखें।"),
+    (("qualification", "education", "degree"), "अपनी शिक्षा/योग्यता चुनें या लिखें।"),
+    (("occupation", "profession", "employment"), "अपना व्यवसाय या नौकरी का प्रकार लिखें।"),
 ]
 
 

@@ -5,7 +5,7 @@
   "description": "Simplified, contextual help for web form fields (AI-powered optional).",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Cognitive Form Assist — Live Analytics"
+    "default_title": "Cognitive Form Assist"
   },
   "permissions": ["storage", "activeTab", "scripting"],
   "host_permissions": [
@@ -19,7 +19,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["metrics.js", "voice-hi.js", "content.js"],
+      "js": ["metrics.js", "voice-hi.js", "voice-kn.js", "content.js"],
       "css": ["style.css"],
       "run_at": "document_idle"
     }

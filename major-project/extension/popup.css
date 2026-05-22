@@ -16,6 +16,46 @@
   box-sizing: border-box;
 }
 
+body.popup-simple {
+  min-height: auto;
+}
+
+.popup-main {
+  padding: 16px 18px;
+}
+
+.popup-section {
+  margin-bottom: 18px;
+}
+
+.popup-section h2 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+
+.popup-hint {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.popup-dashboard-link {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #0b1220;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.875rem;
+}
+
+.popup-dashboard-link:hover {
+  filter: brightness(1.08);
+}
+
 body {
   margin: 0;
   width: 420px;

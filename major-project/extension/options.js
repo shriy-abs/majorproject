@@ -8,7 +8,10 @@ function show(msg) {
 document.addEventListener("DOMContentLoaded", () => {
   const input = document.getElementById("backendUrl");
   chrome.storage.local.get({ backendUrl: DEFAULT_URL }, (items) => {
-    input.value = items.backendUrl || DEFAULT_URL;
+    const base = (items.backendUrl || DEFAULT_URL).replace(/\/+$/, "");
+    input.value = base;
+    const dash = document.getElementById("dashboardLink");
+    if (dash) dash.href = `${base}/dashboard`;
   });
 
   document.getElementById("save").addEventListener("click", () => {

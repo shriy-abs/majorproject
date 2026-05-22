@@ -165,20 +165,46 @@ def simplify_rules(text: str) -> str:
     return f'Enter what the label describes: “{snippet}”.'
 
 
+def _lang_code(lang: str) -> str:
+    l = (lang or "en").lower()[:2]
+    return l if l in ("en", "hi", "kn") else "en"
+
+
 def simplify_openai(text: str, lang: str = "en") -> Optional[str]:
     """Optional LLM simplification. Returns None on failure."""
     key = os.environ.get("OPENAI_API_KEY", "").strip()
     if not key:
         return None
 
+    lang = _lang_code(lang)
+
     if lang == "hi":
         prompt = (
-            "इस फॉर्म फ़ील्ड को बहुत सरल हिंदी में समझाएँ।\n"
-            "प्रारूप: एक या दो छोटे वाक्य जो उपयोगकर्ता को क्या भरना है बताएँ।\n"
-            "ज़रूरत हो तो 'उदाहरण: ' से एक छोटा उदाहरण दें। कोई सवाल न पूछें।\n\n"
+            "नीचे दिया गया अंग्रेज़ी फॉर्म फ़ील्ड लेबल है। इसका अर्थ सरल हिंदी में समझाएँ।\n"
+            "नियम:\n"
+            "- अंग्रेज़ी शब्दों को केवल तभी रखें जब वे आम हों (जैसे email, PAN)।\n"
+            "- उपयोगकर्ता को स्पष्ट बताएँ कि क्या भरना है; एक या दो छोटे वाक्य।\n"
+            "- ज़रूरत हो तो 'उदाहरण: ' से एक उदाहरण दें।\n"
+            "- केवल हिंदी में जवाब दें, कोई सवाल न पूछें।\n\n"
             f"फ़ील्ड लेबल:\n{text}"
         )
-        system = "आप सरकारी वेब फॉर्म को सरल हिंदी में समझाते हैं। जवाब केवल हिंदी में दें।"
+        system = (
+            "आप भारतीय सरकारी और वेब फॉर्म के लेबल को सरल, प्राकृतिक हिंदी में समझाते हैं। "
+            "अंग्रेज़ी लेबल का पूरा अर्थ हिंदी में दें, केवल लिप्यंतरण न करें।"
+        )
+    elif lang == "kn":
+        prompt = (
+            "ಕೆಳಗಿನ ಇಂಗ್ಲಿಷ್ ಫಾರ್ಮ್ ಫೀಲ್ಡ್ ಲೇಬಲ್ ಅರ್ಥವನ್ನು ಸರಳ ಕನ್ನಡದಲ್ಲಿ ವಿವರಿಸಿ.\n"
+            "ನಿಯಮಗಳು:\n"
+            "- ಬಳಕೆದಾರ ಏನು ನಮೂದಿಸಬೇಕು ಎಂದು ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳಿ; ಒಂದು ಅಥವಾ ಎರಡು ಚಿಕ್ಕ ವಾಕ್ಯಗಳು.\n"
+            "- ಅಗತ್ಯವಿದ್ದರೆ 'ಉದಾಹರಣೆ: ' ನೊಂದಿಗೆ ಉದಾಹರಣೆ ನೀಡಿ.\n"
+            "- ಉತ್ತರ ಕನ್ನಡದಲ್ಲೇ ಇರಲಿ, ಪ್ರಶ್ನೆ ಕೇಳಬೇಡಿ.\n\n"
+            f"ಫೀಲ್ಡ್ ಲೇಬಲ್:\n{text}"
+        )
+        system = (
+            "ನೀವು ಭಾರತೀಯ ಸರ್ಕಾರಿ ಮತ್ತು ವೆಬ್ ಫಾರ್ಮ್ ಲೇಬಲ್ಗಳನ್ನು ಸರಳ, ನೈಸರ್ಗಿಕ ಕನ್ನಡದಲ್ಲಿ ವಿವರಿಸುತ್ತೀರಿ. "
+            "ಇಂಗ್ಲಿಷ್ ಲೇಬಲ್ನ ಸಂಪೂರ್ಣ ಅರ್ಥವನ್ನು ಕನ್ನಡದಲ್ಲಿ ನೀಡಿ, ಕೇವಲ ಲಿಪ್ಯಂತರಣ ಮಾಡಬೇಡಿ."
+        )
     else:
         prompt = (
             "Explain this form field in very simple, plain English.\n"
@@ -220,29 +246,59 @@ def simplify_openai(text: str, lang: str = "en") -> Optional[str]:
         return None
 
 
+def _maybe_translate_fallback(english_hint: str, lang: str) -> str:
+    """When rules only echo English, try LLM translation for meaning."""
+    from translate import translate_openai
+
+    translated = translate_openai(english_hint, lang=lang)
+    return translated if translated else english_hint
+
+
 def simplify_text(text: str, lang: str = "en") -> Tuple[str, str]:
     """
     Returns (simplified_text, source) where source is 'llm', 'rules', or 'fallback'.
-    lang: 'en' or 'hi'
+    lang: 'en', 'hi', or 'kn'
     """
     cleaned = _clean(text)
-    use_hi = lang.lower().startswith("hi")
+    lang = _lang_code(lang)
+    use_hi = lang == "hi"
+    use_kn = lang == "kn"
 
     if not cleaned:
-        empty = (
-            "कोई लेबल नहीं मिला। मदद के लिए साइट से पूछें या खाली छोड़ें।"
-            if use_hi
-            else "No label was found; ask the site owner for help or skip if optional."
-        )
+        if use_hi:
+            empty = "कोई लेबल नहीं मिला। मदद के लिए साइट से पूछें या खाली छोड़ें।"
+        elif use_kn:
+            empty = "ಯಾವುದೇ ಲೇಬಲ್ ಕಂಡುಬಂದಿಲ್ಲ. ಸಹಾಯಕ್ಕಾಗಿ ಸೈಟ್ ಮಾಲೀಕರನ್ನು ಕೇಳಿ ಅಥವಾ ಖಾಲಿ ಬಿಡಿ."
+        else:
+            empty = "No label was found; ask the site owner for help or skip if optional."
         return empty, "rules"
 
-    llm = simplify_openai(cleaned, lang="hi" if use_hi else "en")
+    llm = simplify_openai(cleaned, lang=lang)
     if llm:
         return llm, "llm"
 
     if use_hi:
         from simplify_hi import simplify_rules_hi
 
-        return simplify_rules_hi(cleaned), "rules"
+        result = simplify_rules_hi(cleaned)
+        if result.startswith("यहाँ भरें:") or result.startswith("लेबल के अनुसार"):
+            improved = _maybe_translate_fallback(
+                _generic_rule_fallback(cleaned), "hi"
+            )
+            if improved != _generic_rule_fallback(cleaned):
+                return improved, "llm"
+        return result, "rules"
+
+    if use_kn:
+        from simplify_kn import simplify_rules_kn
+
+        result = simplify_rules_kn(cleaned)
+        if result.startswith("ಇಲ್ಲಿ ನಮೂದಿಸಿ:") or result.startswith("ಲೇಬಲ್ ಪ್ರಕಾರ"):
+            improved = _maybe_translate_fallback(
+                _generic_rule_fallback(cleaned), "kn"
+            )
+            if improved != _generic_rule_fallback(cleaned):
+                return improved, "llm"
+        return result, "rules"
 
     return simplify_rules(cleaned), "rules"
