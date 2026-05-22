@@ -3,94 +3,124 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Cognitive Form Assist — Analytics Dashboard</title>
+  <title>Cognitive Form Assist — Accessibility Analytics</title>
   <link rel="stylesheet" href="dashboard.css" />
 </head>
 <body>
   <header class="header">
     <div class="brand">
-      <span class="logo" aria-hidden="true">◉</span>
+      <span class="logo" aria-hidden="true">♿</span>
       <div>
-        <h1>Analytics Dashboard</h1>
-        <p class="subtitle">Cognitive Form Assist · separate from extension</p>
+        <h1>Accessibility Performance Dashboard</h1>
+        <p class="subtitle">Cognitive Form Assist · exhibition analytics</p>
       </div>
     </div>
     <div class="header-actions">
+      <span id="dataModeBadge" class="mode-badge mode-badge--sample">Sample evaluation data</span>
       <span id="connectionStatus" class="status-pill status-pill--unknown">Connecting…</span>
       <button type="button" id="refreshBtn" class="btn">Refresh</button>
       <button type="button" id="resetBtn" class="btn btn--ghost">Reset stats</button>
     </div>
   </header>
 
-  <main class="grid">
+  <main class="dashboard">
     <p id="emptyHint" class="empty-hint" hidden></p>
-    <section class="row row--cards" aria-label="Session counters">
-      <article class="card">
-        <span class="card-value" id="val-fieldsExplained">0</span>
-        <span class="card-label">Fields Explained</span>
+
+    <section class="live-cards" aria-label="Live session counters">
+      <article class="live-card live-card--fields">
+        <span class="live-card__icon" aria-hidden="true">?</span>
+        <div class="live-card__body">
+          <span class="live-card__value" id="val-fieldsExplained">0</span>
+          <span class="live-card__label">Fields Explained</span>
+        </div>
       </article>
-      <article class="card">
-        <span class="card-value" id="val-validationErrorsPrevented">0</span>
-        <span class="card-label">Errors Prevented</span>
+      <article class="live-card live-card--errors">
+        <span class="live-card__icon" aria-hidden="true">✓</span>
+        <div class="live-card__body">
+          <span class="live-card__value" id="val-validationErrorsPrevented">0</span>
+          <span class="live-card__label">Errors Prevented</span>
+        </div>
       </article>
-      <article class="card">
-        <span class="card-value" id="val-voiceAssistsTriggered">0</span>
-        <span class="card-label">Voice Assists</span>
+      <article class="live-card live-card--voice">
+        <span class="live-card__icon" aria-hidden="true">♪</span>
+        <div class="live-card__body">
+          <span class="live-card__value" id="val-voiceAssistsTriggered">0</span>
+          <span class="live-card__label">Voice Assists</span>
+        </div>
       </article>
-      <article class="card">
-        <span class="card-value" id="val-pagesSummarized">0</span>
-        <span class="card-label">Pages Summarized</span>
-      </article>
-      <article class="card card--meta">
-        <span class="card-value card-value--small" id="avgLatency">—</span>
-        <span class="card-label">Avg API Response</span>
+      <article class="live-card live-card--pages">
+        <span class="live-card__icon" aria-hidden="true">§</span>
+        <div class="live-card__body">
+          <span class="live-card__value" id="val-pagesSummarized">0</span>
+          <span class="live-card__label">Pages Summarized</span>
+        </div>
       </article>
     </section>
 
-    <section class="row row--charts">
-      <div class="panel">
-        <h2>Field Types Processed</h2>
-        <div class="chart-box chart-box--tall">
-          <canvas id="fieldsChart" aria-label="Bar chart of field types"></canvas>
-        </div>
-      </div>
-      <div class="panel">
-        <h2>Session Activity Mix</h2>
-        <div class="chart-box">
-          <canvas id="activityChart" aria-label="Doughnut chart of activity types"></canvas>
-        </div>
-      </div>
+    <section class="section-intro">
+      <h2 class="section-title">Accessibility performance insights</h2>
+      <p class="section-desc">
+        Five evaluation graphs compare form completion, error reduction, feature adoption,
+        response latency, and user satisfaction — powered by Chart.js.
+      </p>
     </section>
 
-    <section class="row row--charts">
-      <div class="panel">
-        <h2>Language Usage</h2>
+    <div class="chart-grid">
+      <article class="panel">
+        <header class="panel__head">
+          <h3>A. Form Completion Time Comparison</h3>
+          <p class="panel__hint">Average minutes to finish a typical government form</p>
+        </header>
         <div class="chart-box">
-          <canvas id="languageChart" aria-label="Language breakdown chart"></canvas>
+          <canvas id="completionChart" aria-label="Form completion time with and without assistant"></canvas>
         </div>
-      </div>
-      <div class="panel">
-        <h2>Simplification Source</h2>
-        <div class="chart-box">
-          <canvas id="sourceChart" aria-label="LLM vs rules breakdown"></canvas>
-        </div>
-      </div>
-    </section>
+      </article>
 
-    <section class="row row--wide">
-      <div class="panel panel--wide">
-        <h2>Activity Timeline</h2>
-        <p class="panel-hint">Events synced from the extension during your browsing session</p>
-        <div class="chart-box chart-box--timeline">
-          <canvas id="timelineChart" aria-label="Timeline of user events"></canvas>
+      <article class="panel">
+        <header class="panel__head">
+          <h3>B. Validation Error Reduction</h3>
+          <p class="panel__hint">Fewer mistakes per session when guidance is active</p>
+        </header>
+        <div class="chart-box">
+          <canvas id="validationChart" aria-label="Validation error reduction chart"></canvas>
         </div>
-      </div>
-    </section>
+      </article>
+
+      <article class="panel">
+        <header class="panel__head">
+          <h3>C. Feature Usage Distribution</h3>
+          <p class="panel__hint">How users engage with assistive capabilities</p>
+        </header>
+        <div class="chart-box chart-box--pie">
+          <canvas id="featureChart" aria-label="Feature usage pie chart"></canvas>
+        </div>
+      </article>
+
+      <article class="panel">
+        <header class="panel__head">
+          <h3>D. Response Time Analysis</h3>
+          <p class="panel__hint">Median latency (ms) across core pathways</p>
+        </header>
+        <div class="chart-box">
+          <canvas id="responseChart" aria-label="Response time comparison chart"></canvas>
+        </div>
+      </article>
+
+      <article class="panel panel--wide">
+        <header class="panel__head">
+          <h3>E. User Satisfaction Ratings</h3>
+          <p class="panel__hint">Post-task ratings from pilot evaluation (scale 1–5)</p>
+        </header>
+        <div class="chart-box chart-box--wide">
+          <canvas id="satisfactionChart" aria-label="User satisfaction horizontal bar chart"></canvas>
+        </div>
+      </article>
+    </div>
   </main>
 
   <footer class="footer">
-    <p>Open this page at <code id="dashboardUrl"></code> while the backend and extension are running.</p>
-    <p class="footer-note">Metrics sync automatically when you use form help on any page.</p>
+    <p>Open at <code id="dashboardUrl"></code> while <code>python app.py</code> and the extension are running.</p>
+    <p class="footer-note">Charts auto-refresh every 5s. Sample data displays until live session metrics sync.</p>
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
